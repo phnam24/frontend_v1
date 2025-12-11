@@ -3,14 +3,16 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { User, Calendar, Mail, Phone, Loader2 } from "lucide-react";
+import { z } from "zod";
+import { motion } from "framer-motion";
+import { Edit, Save, X } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { updateUser } from "@/lib/api/auth.service";
+import { FloatingLabelInput } from "@/components/ui/FloatingLabelInput";
+import { AvatarUpload } from "@/components/profile/AvatarUpload";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 
 const profileSchema = z.object({
     lastName: z.string().min(2, "Họ phải có ít nhất 2 ký tự"),
@@ -32,6 +34,7 @@ export function ProfileInfo() {
         handleSubmit,
         formState: { errors },
         reset,
+        watch,
     } = useForm<ProfileFormData>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
@@ -62,7 +65,6 @@ export function ProfileInfo() {
         try {
             setIsLoading(true);
 
-            // Call real API to update user
             await updateUser(user.id, {
                 lastName: data.lastName,
                 firstName: data.firstName,
@@ -71,198 +73,209 @@ export function ProfileInfo() {
                 phone: data.phone || undefined,
             });
 
-            // Reload user data from server
             await loadUser();
-
             setIsEditing(false);
             toast.success("Cập nhật thông tin thành công!");
         } catch (error: any) {
             console.error("Update profile error:", error);
-            const message = error.response?.data?.message || "Không thể cập nhật thông tin. Vui lòng thử lại sau.";
-            toast.error(message);
+            toast.error(error.response?.data?.message || "Cập nhật thất bại. Vui lòng thử lại.");
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleCancel = () => {
-        reset();
         setIsEditing(false);
+        if (user) {
+            reset({
+                lastName: user.lastName || "",
+                firstName: user.firstName || "",
+                dob: user.dob || "",
+                email: (user as any).email || "",
+                phone: (user as any).phone || "",
+            });
+        }
     };
 
-    if (!user) {
-        return (
-            <Card>
-                <CardContent className="py-8">
-                    <p className="text-center text-muted-foreground">Đang tải thông tin...</p>
-                </CardContent>
-            </Card>
-        );
-    }
+    const handleAvatarUpload = async (file: File) => {
+        // Mock upload - in real app, upload to server
+        console.log("Uploading avatar:", file);
+        toast.success("Cập nhật ảnh đại diện thành công!");
+    };
+
+    if (!user) return null;
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle>Thông tin cá nhân</CardTitle>
-                        <CardDescription>Quản lý thông tin tài khoản của bạn</CardDescription>
-                    </div>
-                    {!isEditing && (
-                        <Button variant="outline" onClick={() => setIsEditing(true)}>
-                            Chỉnh sửa
-                        </Button>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    {/* Username - Read only */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">
-                            Tên đăng nhập
-                        </label>
-                        <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                value={user.username}
-                                className="pl-10 bg-muted"
-                                disabled
-                            />
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+        >
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Thông tin cá nhân</CardTitle>
+                            <CardDescription>
+                                Quản lý thông tin cá nhân của bạn
+                            </CardDescription>
                         </div>
-                        <p className="text-xs text-muted-foreground">Tên đăng nhập không thể thay đổi</p>
+                        {!isEditing && (
+                            <Button
+                                onClick={() => setIsEditing(true)}
+                                variant="outline"
+                                className="gap-2"
+                            >
+                                <Edit className="h-4 w-4" />
+                                Chỉnh sửa
+                            </Button>
+                        )}
                     </div>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                        {/* Avatar Section */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.1 }}
+                            className="flex justify-center pb-6 border-b"
+                        >
+                            <AvatarUpload
+                                currentAvatar={(user as any).avatar}
+                                onUpload={handleAvatarUpload}
+                            />
+                        </motion.div>
 
-                    {/* Name fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label htmlFor="lastName" className="text-sm font-medium">
-                                Họ <span className="text-destructive">*</span>
-                            </label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="lastName"
-                                    placeholder="Nguyễn"
-                                    className="pl-10"
-                                    disabled={!isEditing}
+                        {/* Form Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Last Name */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <FloatingLabelInput
                                     {...register("lastName")}
-                                />
-                            </div>
-                            {errors.lastName && (
-                                <p className="text-sm text-destructive">{errors.lastName.message}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label htmlFor="firstName" className="text-sm font-medium">
-                                Tên <span className="text-destructive">*</span>
-                            </label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="firstName"
-                                    placeholder="Văn A"
-                                    className="pl-10"
+                                    label="Họ *"
+                                    type="text"
+                                    error={errors.lastName?.message}
+                                    value={watch("lastName")}
                                     disabled={!isEditing}
-                                    {...register("firstName")}
                                 />
-                            </div>
-                            {errors.firstName && (
-                                <p className="text-sm text-destructive">{errors.firstName.message}</p>
-                            )}
-                        </div>
-                    </div>
+                            </motion.div>
 
-                    {/* Email */}
-                    <div className="space-y-2">
-                        <label htmlFor="email" className="text-sm font-medium">
-                            Email
-                        </label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="your.email@example.com"
-                                className="pl-10"
-                                disabled={!isEditing}
-                                {...register("email")}
-                            />
+                            {/* First Name */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.25 }}
+                            >
+                                <FloatingLabelInput
+                                    {...register("firstName")}
+                                    label="Tên *"
+                                    type="text"
+                                    error={errors.firstName?.message}
+                                    value={watch("firstName")}
+                                    disabled={!isEditing}
+                                />
+                            </motion.div>
+
+                            {/* Email */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.3 }}
+                            >
+                                <FloatingLabelInput
+                                    {...register("email")}
+                                    label="Email"
+                                    type="email"
+                                    error={errors.email?.message}
+                                    value={watch("email")}
+                                    disabled={!isEditing}
+                                />
+                            </motion.div>
+
+                            {/* Phone */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.35 }}
+                            >
+                                <FloatingLabelInput
+                                    {...register("phone")}
+                                    label="Số điện thoại"
+                                    type="tel"
+                                    error={errors.phone?.message}
+                                    value={watch("phone")}
+                                    disabled={!isEditing}
+                                />
+                            </motion.div>
+
+                            {/* Date of Birth */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.4 }}
+                                className="md:col-span-2"
+                            >
+                                <FloatingLabelInput
+                                    {...register("dob")}
+                                    label="Ngày sinh *"
+                                    type="date"
+                                    error={errors.dob?.message}
+                                    value={watch("dob")}
+                                    disabled={!isEditing}
+                                />
+                            </motion.div>
                         </div>
-                        {errors.email && (
-                            <p className="text-sm text-destructive">{errors.email.message}</p>
+
+                        {/* Action Buttons */}
+                        {isEditing && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.45 }}
+                                className="flex gap-3 justify-end pt-4 border-t"
+                            >
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleCancel}
+                                    disabled={isLoading}
+                                    className="gap-2"
+                                >
+                                    <X className="h-4 w-4" />
+                                    Hủy
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="gap-2"
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <motion.div
+                                                animate={{ rotate: 360 }}
+                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                            >
+                                                <Save className="h-4 w-4" />
+                                            </motion.div>
+                                            Đang lưu...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="h-4 w-4" />
+                                            Lưu thay đổi
+                                        </>
+                                    )}
+                                </Button>
+                            </motion.div>
                         )}
-                    </div>
-
-                    {/* Phone */}
-                    <div className="space-y-2">
-                        <label htmlFor="phone" className="text-sm font-medium">
-                            Số điện thoại
-                        </label>
-                        <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                id="phone"
-                                type="tel"
-                                placeholder="0912345678"
-                                className="pl-10"
-                                disabled={!isEditing}
-                                {...register("phone")}
-                            />
-                        </div>
-                        {errors.phone && (
-                            <p className="text-sm text-destructive">{errors.phone.message}</p>
-                        )}
-                    </div>
-
-                    {/* Date of Birth */}
-                    <div className="space-y-2">
-                        <label htmlFor="dob" className="text-sm font-medium">
-                            Ngày sinh
-                        </label>
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                id="dob"
-                                type="date"
-                                className="pl-10"
-                                disabled={!isEditing}
-                                {...register("dob")}
-                            />
-                        </div>
-                        {errors.dob && (
-                            <p className="text-sm text-destructive">{errors.dob.message}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">Để nhận ưu đãi sinh nhật</p>
-                    </div>
-
-                    {/* Account ID - Read only */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">
-                            ID tài khoản
-                        </label>
-                        <Input
-                            value={user.id}
-                            className="bg-muted font-mono text-xs"
-                            disabled
-                        />
-                    </div>
-
-                    {/* Action buttons */}
-                    {isEditing && (
-                        <div className="flex gap-3 pt-4">
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Lưu thay đổi
-                            </Button>
-                            <Button type="button" variant="outline" onClick={handleCancel} disabled={isLoading}>
-                                Hủy
-                            </Button>
-                        </div>
-                    )}
-                </form>
-            </CardContent>
-        </Card>
+                    </form>
+                </CardContent>
+            </Card>
+        </motion.div>
     );
 }
