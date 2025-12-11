@@ -84,6 +84,9 @@ export interface Product {
     createdAt: string;
     updatedAt: string;
     variants: ProductVariant[];
+    // Populated fields (not from API but useful for UI)
+    brand?: Brand;
+    categories?: Category[];
 }
 
 export interface ProductVariant {

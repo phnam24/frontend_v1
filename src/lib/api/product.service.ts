@@ -64,6 +64,11 @@ export async function searchBrands(params: {
     return response.data.result;
 }
 
+export async function getBrandById(id: number): Promise<Brand> {
+    const response = await apiClient.get<ApiResponse<Brand>>(`/product/brands/${id}`);
+    return response.data.result;
+}
+
 // Categories
 export async function getAllCategories(params?: {
     page?: number;

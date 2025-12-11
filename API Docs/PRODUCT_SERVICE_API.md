@@ -204,6 +204,23 @@ Base URL: `/products`, `/brands`, `/categories`, `/variants`, `/spec-attributes`
   - `limit` (optional): Items per page (default: 12)
 - **Response**: Same structure as Search Brands with message "All brands"
 
+### 6. Get Brand by ID
+- **URL**: `GET /brands/{id}`
+- **Auth**: Not required
+- **Path Parameters**:
+  - `id` (required): Brand ID
+- **Response**:
+```json
+{
+    "code": 1000,
+    "message": "Brand with id: 1",
+    "result": {
+        "id": 1,
+        "name": "Apple",
+        "logo": "example.com/logo.png"
+    }
+}
+```
 ---
 
 ## Categories API

@@ -1,15 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useState } from "react";
+import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { Mail, Lock, User, Calendar, Phone, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { Loader2, Mail, Lock, User, Calendar, Phone, Eye, EyeOff } from "lucide-react";
+import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { FloatingLabelInput } from "@/components/ui/FloatingLabelInput";
+import { PasswordStrengthMeter } from "@/components/ui/PasswordStrengthMeter";
+import { FormErrorMessage } from "@/components/ui/FormErrorMessage";
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const registerSchema = z.object({
     username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
@@ -31,20 +35,24 @@ export function RegisterForm() {
     const router = useRouter();
     const { register: registerUser } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     const {
         register,
         handleSubmit,
         formState: { errors },
+        watch,
     } = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema),
     });
 
+    const password = watch("password");
+
     const onSubmit = async (data: RegisterFormData) => {
+        setIsLoading(true);
+        setErrorMessage("");
+
         try {
-            setIsLoading(true);
             const { confirmPassword, ...registerData } = data;
 
             // Remove empty optional fields
@@ -55,202 +63,199 @@ export function RegisterForm() {
             };
 
             await registerUser(cleanedData);
+
+            // Success animation delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             router.push("/login");
-        } catch (error) {
-            // Error is handled in the store with toast
+        } catch (error: any) {
+            setErrorMessage(error.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.");
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <label htmlFor="lastName" className="text-sm font-medium">
-                        Họ <span className="text-destructive">*</span>
-                    </label>
-                    <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            id="lastName"
-                            placeholder="Nguyễn"
-                            className="pl-10"
+        <>
+            <LoadingOverlay isLoading={isLoading} message="Đang tạo tài khoản..." />
+
+            <motion.form
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-4"
+            >
+                {/* Error Message */}
+                {errorMessage && (
+                    <FormErrorMessage message={errorMessage} type="error" />
+                )}
+
+                {/* Name Fields */}
+                <div className="grid grid-cols-2 gap-4">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <FloatingLabelInput
                             {...register("lastName")}
+                            label="Họ *"
+                            type="text"
+                            leftIcon={<User className="h-5 w-5" />}
+                            error={errors.lastName?.message}
+                            value={watch("lastName")}
                         />
-                    </div>
-                    {errors.lastName && (
-                        <p className="text-sm text-destructive">{errors.lastName.message}</p>
-                    )}
-                </div>
+                    </motion.div>
 
-                <div className="space-y-2">
-                    <label htmlFor="firstName" className="text-sm font-medium">
-                        Tên <span className="text-destructive">*</span>
-                    </label>
-                    <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            id="firstName"
-                            placeholder="Văn A"
-                            className="pl-10"
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.15 }}
+                    >
+                        <FloatingLabelInput
                             {...register("firstName")}
+                            label="Tên *"
+                            type="text"
+                            leftIcon={<User className="h-5 w-5" />}
+                            error={errors.firstName?.message}
+                            value={watch("firstName")}
                         />
-                    </div>
-                    {errors.firstName && (
-                        <p className="text-sm text-destructive">{errors.firstName.message}</p>
-                    )}
+                    </motion.div>
                 </div>
-            </div>
 
-            <div className="space-y-2">
-                <label htmlFor="username" className="text-sm font-medium">
-                    Tên đăng nhập <span className="text-destructive">*</span>
-                </label>
-                <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        id="username"
-                        type="text"
-                        placeholder="Nhập tên đăng nhập"
-                        className="pl-10"
+                {/* Username */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <FloatingLabelInput
                         {...register("username")}
+                        label="Tên đăng nhập *"
+                        type="text"
+                        leftIcon={<User className="h-5 w-5" />}
+                        error={errors.username?.message}
+                        value={watch("username")}
                     />
-                </div>
-                {errors.username && (
-                    <p className="text-sm text-destructive">{errors.username.message}</p>
-                )}
-            </div>
+                </motion.div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium">
-                        Email
-                    </label>
-                    <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            id="email"
-                            type="email"
-                            placeholder="email@example.com"
-                            className="pl-10"
+                {/* Email & Phone */}
+                <div className="grid grid-cols-2 gap-4">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 }}
+                    >
+                        <FloatingLabelInput
                             {...register("email")}
+                            label="Email"
+                            type="email"
+                            leftIcon={<Mail className="h-5 w-5" />}
+                            error={errors.email?.message}
+                            value={watch("email")}
                         />
-                    </div>
-                    {errors.email && (
-                        <p className="text-sm text-destructive">{errors.email.message}</p>
-                    )}
-                </div>
+                    </motion.div>
 
-                <div className="space-y-2">
-                    <label htmlFor="phone" className="text-sm font-medium">
-                        Số điện thoại
-                    </label>
-                    <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            id="phone"
-                            type="tel"
-                            placeholder="0123456789"
-                            className="pl-10"
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <FloatingLabelInput
                             {...register("phone")}
+                            label="Số điện thoại"
+                            type="tel"
+                            leftIcon={<Phone className="h-5 w-5" />}
+                            error={errors.phone?.message}
+                            value={watch("phone")}
                         />
-                    </div>
-                    {errors.phone && (
-                        <p className="text-sm text-destructive">{errors.phone.message}</p>
-                    )}
+                    </motion.div>
                 </div>
-            </div>
 
-            <div className="space-y-2">
-                <label htmlFor="dob" className="text-sm font-medium">
-                    Ngày sinh <span className="text-destructive">*</span>
-                </label>
-                <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        id="dob"
-                        type="date"
-                        className="pl-10"
+                {/* Date of Birth */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.35 }}
+                >
+                    <FloatingLabelInput
                         {...register("dob")}
+                        label="Ngày sinh *"
+                        type="date"
+                        leftIcon={<Calendar className="h-5 w-5" />}
+                        error={errors.dob?.message}
+                        value={watch("dob")}
                     />
-                </div>
-                {errors.dob && (
-                    <p className="text-sm text-destructive">{errors.dob.message}</p>
-                )}
-            </div>
+                </motion.div>
 
-            <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">
-                    Mật khẩu <span className="text-destructive">*</span>
-                </label>
-                <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
+                {/* Password */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="space-y-2"
+                >
+                    <FloatingLabelInput
                         {...register("password")}
+                        label="Mật khẩu *"
+                        type="password"
+                        leftIcon={<Lock className="h-5 w-5" />}
+                        error={errors.password?.message}
+                        value={watch("password")}
                     />
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                        ) : (
-                            <Eye className="h-4 w-4" />
-                        )}
-                    </button>
-                </div>
-                {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password.message}</p>
-                )}
-            </div>
 
-            <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm font-medium">
-                    Xác nhận mật khẩu <span className="text-destructive">*</span>
-                </label>
-                <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
+                    {/* Password Strength Meter */}
+                    <PasswordStrengthMeter password={password || ""} />
+                </motion.div>
+
+                {/* Confirm Password */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.45 }}
+                >
+                    <FloatingLabelInput
                         {...register("confirmPassword")}
+                        label="Xác nhận mật khẩu *"
+                        type="password"
+                        leftIcon={<Lock className="h-5 w-5" />}
+                        error={errors.confirmPassword?.message}
+                        value={watch("confirmPassword")}
                     />
-                    <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                </motion.div>
+
+                {/* Submit Button */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    <Button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 group"
+                        disabled={isLoading}
                     >
-                        {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                        ) : (
-                            <Eye className="h-4 w-4" />
-                        )}
-                    </button>
-                </div>
-                {errors.confirmPassword && (
-                    <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-                )}
-            </div>
+                        <span>Tạo tài khoản</span>
+                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                </motion.div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
-            </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-                Đã có tài khoản?{" "}
-                <Link href="/login" className="text-primary hover:underline font-medium">
-                    Đăng nhập
-                </Link>
-            </p>
-        </form>
+                {/* Login Link */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.55 }}
+                    className="text-center pt-4 border-t"
+                >
+                    <p className="text-sm text-gray-600">
+                        Đã có tài khoản?{" "}
+                        <Link href="/login" className="text-primary font-semibold hover:underline">
+                            Đăng nhập ngay
+                        </Link>
+                    </p>
+                </motion.div>
+            </motion.form>
+        </>
     );
 }

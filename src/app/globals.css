@@ -1,5 +1,25 @@
 @tailwind base;
 @tailwind components;
+
+/* Scrollbar hide utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Compact container - smaller max-width */
+@layer components {
+  .container {
+    @apply mx-auto px-3 sm:px-4;
+    max-width: 1280px;
+    /* Reduced from default 1536px */
+  }
+}
+
 @tailwind utilities;
 
 @layer base {
@@ -10,15 +30,15 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    
+
     /* Primary: Blue (#2563eb) */
     --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
-    
+
     /* Secondary: Green (#10b981) */
     --secondary: 160 84% 39%;
     --secondary-foreground: 0 0% 100%;
-    
+
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
@@ -43,15 +63,15 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    
+
     /* Primary: Blue (lighter for dark mode) */
     --primary: 217 91% 60%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    
+
     /* Secondary: Green (lighter for dark mode) */
     --secondary: 160 84% 39%;
     --secondary-foreground: 210 40% 98%;
-    
+
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 217.2 32.6% 17.5%;

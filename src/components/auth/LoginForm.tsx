@@ -1,19 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useState } from "react";
+import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { User, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { Loader2, User, Lock, Eye, EyeOff } from "lucide-react";
+import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { FloatingLabelInput } from "@/components/ui/FloatingLabelInput";
+import { FormErrorMessage } from "@/components/ui/FormErrorMessage";
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const loginSchema = z.object({
-    username: z.string().min(1, "Vui lòng nhập tên đăng nhập"),
-    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    username: z.string().min(1, "Tên đăng nhập không được để trống"),
+    password: z.string().min(1, "Mật khẩu không được để trống"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -22,91 +25,129 @@ export function LoginForm() {
     const router = useRouter();
     const { login } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     const {
         register,
         handleSubmit,
         formState: { errors },
+        watch,
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
     });
 
     const onSubmit = async (data: LoginFormData) => {
+        setIsLoading(true);
+        setErrorMessage("");
+
         try {
-            setIsLoading(true);
             await login(data);
+
+            // Success animation delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             router.push("/");
-            router.refresh();
-        } catch (error) {
-            // Error is handled in the store with toast
+        } catch (error: any) {
+            setErrorMessage(error.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.");
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-                <label htmlFor="username" className="text-sm font-medium">
-                    Tên đăng nhập
-                </label>
-                <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        id="username"
-                        type="text"
-                        placeholder="Nhập tên đăng nhập"
-                        className="pl-10"
+        <>
+            <LoadingOverlay isLoading={isLoading} message="Đang đăng nhập..." />
+
+            <motion.form
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-4"
+            >
+                {/* Error Message */}
+                {errorMessage && (
+                    <FormErrorMessage message={errorMessage} type="error" />
+                )}
+
+                {/* Email Input */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                >
+                    <FloatingLabelInput
                         {...register("username")}
+                        label="Tên đăng nhập"
+                        type="text"
+                        leftIcon={<User className="h-5 w-5" />}
+                        error={errors.username?.message}
+                        value={watch("username")}
                     />
-                </div>
-                {errors.username && (
-                    <p className="text-sm text-destructive">{errors.username.message}</p>
-                )}
-            </div>
+                </motion.div>
 
-            <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">
-                    Mật khẩu
-                </label>
-                <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
+                {/* Password Input */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <FloatingLabelInput
                         {...register("password")}
+                        label="Mật khẩu"
+                        type="password"
+                        leftIcon={<Lock className="h-5 w-5" />}
+                        error={errors.password?.message}
+                        value={watch("password")}
                     />
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                </motion.div>
+
+                {/* Forgot Password Link */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex justify-end"
+                >
+                    <Link
+                        href="/forgot-password"
+                        className="text-sm text-primary hover:underline"
                     >
-                        {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                        ) : (
-                            <Eye className="h-4 w-4" />
-                        )}
-                    </button>
-                </div>
-                {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password.message}</p>
-                )}
-            </div>
+                        Quên mật khẩu?
+                    </Link>
+                </motion.div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
-            </Button>
+                {/* Submit Button */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                >
+                    <Button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 group"
+                        disabled={isLoading}
+                    >
+                        <span>Đăng nhập</span>
+                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                </motion.div>
 
-            <p className="text-center text-sm text-muted-foreground">
-                Chưa có tài khoản?{" "}
-                <Link href="/register" className="text-primary hover:underline font-medium">
-                    Đăng ký
-                </Link>
-            </p>
-        </form>
+                {/* Register Link */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-center pt-4 border-t"
+                >
+                    <p className="text-sm text-gray-600">
+                        Chưa có tài khoản?{" "}
+                        <Link href="/register" className="text-primary font-semibold hover:underline">
+                            Đăng ký ngay
+                        </Link>
+                    </p>
+                </motion.div>
+            </motion.form>
+        </>
     );
 }
