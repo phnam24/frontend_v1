@@ -19,7 +19,7 @@ export function SearchBar() {
     // Fetch products for search suggestions
     const { data: productsData } = useQuery({
         queryKey: ["products"],
-        queryFn: () => getAllProducts({ page: 1, size: 100 }),
+        queryFn: () => getAllProducts({ page: 1, limit: 20 }),
     });
 
     // Load recent searches from localStorage
@@ -159,17 +159,32 @@ export function SearchBar() {
                                         </button>
                                     </div>
                                     {recentSearches.map((search, index) => (
-                                        <motion.button
+                                        <motion.div
                                             key={index}
                                             initial={{ opacity: 0, x: -10 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: index * 0.05 }}
-                                            onClick={() => handleSearch(search)}
-                                            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors text-left"
+                                            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group"
                                         >
-                                            <Clock className="h-4 w-4 text-gray-400" />
-                                            <span className="flex-1 text-sm text-gray-700">{search}</span>
-                                        </motion.button>
+                                            <button
+                                                onClick={() => handleSearch(search)}
+                                                className="flex-1 flex items-center gap-3 text-left"
+                                            >
+                                                <Clock className="h-4 w-4 text-gray-400" />
+                                                <span className="flex-1 text-sm text-gray-700">{search}</span>
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const updated = recentSearches.filter((_, i) => i !== index);
+                                                    setRecentSearches(updated);
+                                                    localStorage.setItem("recentSearches", JSON.stringify(updated));
+                                                }}
+                                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-all"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </button>
+                                        </motion.div>
                                     ))}
                                 </div>
                             )}

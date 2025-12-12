@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { getAllProducts, getAllBrands } from "@/lib/api/product.service";
+import { getAllProducts, getAllBrands, searchProducts } from "@/lib/api/product.service";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductGridSkeleton } from "@/components/products/ProductCardSkeleton";
 import { Pagination } from "@/components/ui/Pagination";
@@ -28,7 +28,7 @@ export default function ProductsPage() {
     // Fetch all brands for mapping
     const { data: brandsData } = useQuery({
         queryKey: ["brands-all"],
-        queryFn: () => getAllBrands({ page: 1, limit: 100 }),
+        queryFn: () => getAllBrands({ page: 1, limit: 20 }),
     });
 
     // Create brand map
@@ -39,7 +39,13 @@ export default function ProductsPage() {
 
     const { data, isLoading, error } = useQuery({
         queryKey: ["products", page, limit, search],
-        queryFn: () => getAllProducts({ page, limit, search }),
+        queryFn: () => {
+            // Use dedicated search endpoint when search query exists
+            if (search.trim()) {
+                return searchProducts({ name: search, page, limit });
+            }
+            return getAllProducts({ page, limit });
+        },
     });
 
     // Client-side filtering and sorting
@@ -51,6 +57,9 @@ export default function ProductsPage() {
             ...p,
             brand: brandMap.get(p.brandId),
         }));
+
+        // Note: Search filtering is done server-side
+        // Client-side filters below are for additional filtering
 
         // Apply filters
         // Price filter
@@ -88,7 +97,7 @@ export default function ProductsPage() {
         }
 
         return products;
-    }, [data, brandMap, priceRange, brands, sortBy]);
+    }, [data, brandMap, search, priceRange, brands, sortBy]);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -127,12 +136,12 @@ export default function ProductsPage() {
                         {/* Page Header with Sort */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">Máy tính Laptop</h1>
-                                {data && (
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        Hiển thị {filteredAndSortedProducts.length} / {data.total} sản phẩm
-                                    </p>
-                                )}
+                                <h1 className="text-2xl font-bold text-gray-900">
+                                    {search ? `Kết quả tìm kiếm: "${search}"` : "Máy tính Laptop"}
+                                </h1>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {filteredAndSortedProducts.length} sản phẩm
+                                </p>
                             </div>
                             <SortDropdown />
                         </div>
@@ -162,7 +171,7 @@ export default function ProductsPage() {
                         ) : null}
                     </main>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
