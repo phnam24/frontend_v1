@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useWishlistStore } from "@/lib/store/wishlist.store";
+import { useCartStore } from "@/lib/store/cart.store";
 import { cn } from "@/lib/utils";
 import { ImageGallery } from "@/components/products/ImageGallery";
 import { AnimatedPrice } from "@/components/ui/AnimatedPrice";
@@ -28,6 +29,7 @@ export default function ProductDetailPage() {
     const [selectedColor, setSelectedColor] = useState<string>();
     const [selectedSize, setSelectedSize] = useState<string>();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
+    const { addItem } = useCartStore();
 
     // Extract ID from slug (format: {slug}-{id})
     const productId = slugWithId ? extractIdFromSlug(slugWithId) : null;
@@ -115,18 +117,39 @@ export default function ProductDetailPage() {
         }
     };
 
-    const handleAddToCart = () => {
-        toast.custom((t) => (
-            <CartToast
-                productName={product.name}
-                productImage={validImages[0]}
-                quantity={1}
-                price={product.priceSale}
-                onClose={() => toast.dismiss(t.id)}
-            />
-        ), {
-            duration: 5000,
-        });
+    const handleAddToCart = async () => {
+        try {
+            // Get first variant or use product ID
+            const variantId = product.variants?.[0]?.id || product.id;
+            const variantName = selectedColor && selectedSize
+                ? `${selectedColor} - ${selectedSize}`
+                : product.variants?.[0]
+                    ? [product.variants[0].color, product.variants[0].size].filter(Boolean).join(" - ")
+                    : "";
+
+            await addItem({
+                productId: product.id,
+                variantId: variantId,
+                quantity: 1,
+                price: product.priceSale || product.priceList,
+                attributesName: variantName,
+            });
+
+            // Show custom toast with product info
+            toast.custom((t) => (
+                <CartToast
+                    productName={product.name}
+                    productImage={validImages[0]}
+                    quantity={1}
+                    price={product.priceSale}
+                    onClose={() => toast.dismiss(t.id)}
+                />
+            ), {
+                duration: 5000,
+            });
+        } catch (error) {
+            console.error("Add to cart error:", error);
+        }
     };
 
     // Mock variant data (replace with real data from API)

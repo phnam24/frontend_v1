@@ -137,14 +137,19 @@ export interface Cart {
 
 export interface CartItem {
     id: number;
+    productId: number;
     variantId: number;
     quantity: number;
-    price: number;
+    priceSnapshot: number;
+    attributesName?: string;
 }
 
 export interface AddToCartRequest {
+    productId: number;
     variantId: number;
     quantity: number;
+    price: number;
+    attributesName?: string;
 }
 
 export interface UpdateCartItemRequest {

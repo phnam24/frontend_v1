@@ -8,11 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/types/product";
 import { useWishlistStore } from "@/lib/store/wishlist.store";
+import { useCartStore } from "@/lib/store/cart.store";
 import { getVariantsByProduct, getVariantSpecs } from "@/lib/api/product.service";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import Tilt from "react-parallax-tilt";
 import { generateProductSlug } from "@/lib/utils/slug";
+import toast from "react-hot-toast";
+import { CartToast } from "@/components/ui/CartToast";
 
 interface ProductCardProps {
     product: Product;
@@ -29,7 +32,9 @@ interface ProductSpecs {
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
+    const { addItem } = useCartStore();
     const [imageError, setImageError] = useState(false);
+    const [variants, setVariants] = useState<any[]>([]);
     const [specs, setSpecs] = useState<ProductSpecs>({});
     const [showParticles, setShowParticles] = useState(false);
 
@@ -47,6 +52,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         const fetchSpecs = async () => {
             try {
                 const variants = await getVariantsByProduct(product.id);
+                setVariants(variants); // Store variants for add to cart
                 if (variants.length > 0) {
                     const variantSpecs = await getVariantSpecs(variants[0].id);
                     const specsMap: ProductSpecs = {};
@@ -78,6 +84,40 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             // Show particles animation
             setShowParticles(true);
             setTimeout(() => setShowParticles(false), 1000);
+        }
+    };
+
+    const handleAddToCart = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+            // Get first variant or use default
+            const variantId = variants[0]?.id || product.id;
+            const variantName = variants[0]?.attributeValues?.map((av: any) => av.value).join(" - ") || "";
+
+            await addItem({
+                productId: product.id,
+                variantId: variantId,
+                quantity: 1,
+                price: product.priceSale || product.priceList,
+                attributesName: variantName,
+            });
+
+            // Show custom toast with product info
+            toast.custom((t) => (
+                <CartToast
+                    productName={product.name}
+                    productImage={product.avatar || product.firstImage}
+                    quantity={1}
+                    price={product.priceSale || product.priceList}
+                    onClose={() => toast.dismiss(t.id)}
+                />
+            ), {
+                duration: 5000,
+            });
+        } catch (error) {
+            console.error("Add to cart error:", error);
         }
     };
 
@@ -256,10 +296,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                             <Button
                                 size="sm"
                                 className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-md hover:shadow-lg transition-all"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    onAddToCart?.(product);
-                                }}
+                                onClick={handleAddToCart}
                             >
                                 <ShoppingCart className="h-4 w-4 mr-2" />
                                 Thêm vào giỏ

@@ -1,9 +1,13 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
-import { ShoppingBag, User, LogOut } from "lucide-react";
+import { ShoppingBag, ShoppingCart, User, LogOut } from "lucide-react";
+import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { useCartStore } from "@/lib/store/cart.store";
 import { SearchBar } from "@/components/layout/SearchBar";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -16,6 +20,27 @@ import {
 
 export function Header() {
     const { user, isAuthenticated, logout } = useAuthStore();
+    const { cart, fetchCart } = useCartStore();
+    const [isCartOpen, setIsCartOpen] = useState(false);
+    const totalItems = cart?.totalItems || 0;
+
+    // Fetch cart when authenticated
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            fetchCart();
+        }
+    }, [isAuthenticated, fetchCart]);
+
+    // Close drawer on ESC key
+    React.useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isCartOpen) {
+                setIsCartOpen(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isCartOpen]);
 
     return (
         <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -43,6 +68,27 @@ export function Header() {
                         </Link>
                     </nav>
                     <div className="flex items-center gap-4">
+                        {/* Cart Icon with Badge */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="relative"
+                            onClick={() => setIsCartOpen(true)}
+                            aria-label="Giỏ hàng"
+                        >
+                            <ShoppingCart className="h-5 w-5" />
+                            {totalItems > 0 && (
+                                <motion.span
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                                    className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+                                >
+                                    {totalItems > 99 ? "99+" : totalItems}
+                                </motion.span>
+                            )}
+                        </Button>
+
                         {isAuthenticated && user ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -86,6 +132,9 @@ export function Header() {
                     </div>
                 </div>
             </div>
+
+            {/* Cart Drawer */}
+            <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
         </header>
     );
 }

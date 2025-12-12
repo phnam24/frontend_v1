@@ -38,9 +38,13 @@ Base URL: `/api/cart`, `/api/orders`, `/api/vouchers`
 - **Request Body**:
 ```json
 {
-  "variantId": 1,
-  "quantity": 2
+    "productId": 1,
+    "variantId": 1,
+    "quantity": 2,
+    "price": 1000000,
+    "attributesName": "Black"
 }
+
 ```
 - **Response**: Same structure as Get My Cart with message "Item added to cart successfully"
 
