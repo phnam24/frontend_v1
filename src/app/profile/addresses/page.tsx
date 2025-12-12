@@ -2,12 +2,12 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { Header } from "@/components/layout/Header";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
-import { AddressManagement } from "@/components/profile/AddressManagement";
+import { AddressList } from "@/components/profile/AddressList";
 
 export default function AddressesPage() {
     const router = useRouter();
@@ -56,9 +56,12 @@ export default function AddressesPage() {
             <div className="container mx-auto px-4 py-8">
                 {/* Page Title */}
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold mb-2">Địa chỉ giao hàng</h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        <MapPin className="h-8 w-8 text-primary" />
+                        <h1 className="text-3xl font-bold">Địa chỉ của tôi</h1>
+                    </div>
                     <p className="text-muted-foreground">
-                        Quản lý địa chỉ nhận hàng của bạn
+                        Quản lý địa chỉ giao hàng của bạn
                     </p>
                 </div>
 
@@ -69,7 +72,9 @@ export default function AddressesPage() {
 
                     {/* Main Content */}
                     <div className="flex-1">
-                        <AddressManagement />
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <AddressList />
+                        </div>
                     </div>
                 </div>
             </div>

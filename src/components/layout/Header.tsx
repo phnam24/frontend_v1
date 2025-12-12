@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ShoppingBag, User, LogOut } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { SearchBar } from "@/components/layout/SearchBar";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -19,12 +20,18 @@ export function Header() {
     return (
         <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
             <div className="container mx-auto px-4 py-4">
-                <div className="flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-primary">
+                <div className="flex items-center gap-6">
+                    <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-primary flex-shrink-0">
                         <ShoppingBag className="h-8 w-8" />
                         <span>TechStore</span>
                     </Link>
-                    <nav className="hidden md:flex items-center gap-6">
+
+                    {/* Search Bar */}
+                    <div className="hidden md:block flex-1">
+                        <SearchBar />
+                    </div>
+
+                    <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
                         <Link href="/products" className="text-sm font-medium hover:text-primary transition-colors">
                             Sản phẩm
                         </Link>

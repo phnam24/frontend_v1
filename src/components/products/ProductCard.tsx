@@ -12,6 +12,7 @@ import { getVariantsByProduct, getVariantSpecs } from "@/lib/api/product.service
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import Tilt from "react-parallax-tilt";
+import { generateProductSlug } from "@/lib/utils/slug";
 
 interface ProductCardProps {
     product: Product;
@@ -38,38 +39,31 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         : 0;
     const savings = product.priceList - product.priceSale;
 
-    // Fetch specs from first variant
+    // Generate slug with ID: {slug}-{id}
+    const productSlug = generateProductSlug(product.slug, product.id);
+
+    // Fetch specs for this product
     useEffect(() => {
         const fetchSpecs = async () => {
             try {
                 const variants = await getVariantsByProduct(product.id);
-                if (variants && variants.length > 0) {
+                if (variants.length > 0) {
                     const variantSpecs = await getVariantSpecs(variants[0].id);
-
-                    // Map specs to display format
                     const specsMap: ProductSpecs = {};
-                    variantSpecs.forEach((spec: any) => {
-                        const label = spec.attribute?.label?.toLowerCase() || "";
-                        if (label.includes("cpu") || label.includes("processor")) {
-                            specsMap.cpu = spec.value;
-                        } else if (label.includes("gpu") || label.includes("graphics") || label.includes("vga")) {
-                            specsMap.gpu = spec.value;
-                        } else if (label.includes("ram") || label.includes("memory")) {
-                            specsMap.ram = spec.value;
-                        } else if (label.includes("storage") || label.includes("ssd") || label.includes("hdd")) {
-                            specsMap.storage = spec.value;
-                        } else if (label.includes("screen") || label.includes("display") || label.includes("màn hình")) {
-                            specsMap.screen = spec.value;
-                        }
-                    });
-
+                    // variantSpecs.forEach((spec) => {
+                    //     const key = spec.specAttributeId.toLowerCase();
+                    //     if (key.includes('cpu') || key.includes('processor')) specsMap.cpu = spec.value;
+                    //     if (key.includes('gpu') || key.includes('card')) specsMap.gpu = spec.value;
+                    //     if (key.includes('ram') || key.includes('memory')) specsMap.ram = spec.value;
+                    //     if (key.includes('storage') || key.includes('ssd') || key.includes('hdd')) specsMap.storage = spec.value;
+                    //     if (key.includes('screen') || key.includes('display')) specsMap.screen = spec.value;
+                    // });
                     setSpecs(specsMap);
                 }
             } catch (error) {
-                console.error("Failed to fetch specs:", error);
+                console.error('Failed to fetch specs:', error);
             }
         };
-
         fetchSpecs();
     }, [product.id]);
 
@@ -100,7 +94,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             transitionSpeed={400}
             className="h-full"
         >
-            <Link href={`/products/${product.slug}`}>
+            <Link href={`/products/${productSlug}`}>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

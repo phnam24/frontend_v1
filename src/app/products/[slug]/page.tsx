@@ -2,7 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
-import { getAllProducts } from "@/lib/api/product.service";
+import { getProductById, getAllProducts } from "@/lib/api/product.service";
+import { extractIdFromSlug } from "@/lib/utils/slug";
 import { Header } from "@/components/layout/Header";
 import { ChevronRight, ShoppingCart, Heart, Share2, Check, Star, Package, Shield, Truck } from "lucide-react";
 import Link from "next/link";
@@ -22,19 +23,27 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function ProductDetailPage() {
     const params = useParams();
-    const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
+    const slugWithId = Array.isArray(params.slug) ? params.slug[0] : params.slug;
     const [activeTab, setActiveTab] = useState("description");
     const [selectedColor, setSelectedColor] = useState<string>();
     const [selectedSize, setSelectedSize] = useState<string>();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
 
-    // Fetch all products and find by slug
-    const { data: productsData, isLoading, error } = useQuery({
-        queryKey: ["products-all"],
-        queryFn: () => getAllProducts({ page: 1, limit: 1000 }),
+    // Extract ID from slug (format: {slug}-{id})
+    const productId = slugWithId ? extractIdFromSlug(slugWithId) : null;
+
+    // Fetch product by ID - OPTIMIZED!
+    const { data: product, isLoading, error } = useQuery({
+        queryKey: ["product", productId],
+        queryFn: () => getProductById(productId as number),
+        enabled: !!productId && !isNaN(productId),
     });
 
-    const product = productsData?.result.find((p) => p.slug === slug);
+    // Fetch all products for related products section
+    const { data: productsData } = useQuery({
+        queryKey: ["products-for-related"],
+        queryFn: () => getAllProducts({ page: 1, limit: 20 }),
+    });
 
     if (isLoading) {
         return (
