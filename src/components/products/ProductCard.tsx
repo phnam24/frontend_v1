@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/types/product";
 import { useWishlistStore } from "@/lib/store/wishlist.store";
 import { useCartStore } from "@/lib/store/cart.store";
+import { useAuthStore } from "@/lib/store/auth.store";
+import { useRouter } from "next/navigation";
 import { getVariantsByProduct, getVariantSpecs } from "@/lib/api/product.service";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +18,7 @@ import Tilt from "react-parallax-tilt";
 import { generateProductSlug } from "@/lib/utils/slug";
 import toast from "react-hot-toast";
 import { CartToast } from "@/components/ui/CartToast";
+import { LoginDialog } from "@/components/ui/LoginDialog";
 
 interface ProductCardProps {
     product: Product;
@@ -33,10 +36,14 @@ interface ProductSpecs {
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
     const { addItem } = useCartStore();
+    const { isAuthenticated } = useAuthStore();
+    const router = useRouter();
     const [imageError, setImageError] = useState(false);
     const [variants, setVariants] = useState<any[]>([]);
     const [specs, setSpecs] = useState<ProductSpecs>({});
     const [showParticles, setShowParticles] = useState(false);
+    const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+    const [loginAction, setLoginAction] = useState<"cart" | "wishlist">("cart");
 
     const inWishlist = isInWishlist(product.id);
     const discount = product.priceSale < product.priceList
@@ -77,6 +84,12 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         e.preventDefault();
         e.stopPropagation();
 
+        if (!isAuthenticated) {
+            setLoginAction("wishlist");
+            setLoginDialogOpen(true);
+            return;
+        }
+
         if (inWishlist) {
             removeFromWishlist(product.id);
         } else {
@@ -90,6 +103,12 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
     const handleAddToCart = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (!isAuthenticated) {
+            setLoginAction("cart");
+            setLoginDialogOpen(true);
+            return;
+        }
 
         try {
             // Get first variant or use default
@@ -310,6 +329,12 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                     </div>
                 </motion.div>
             </Link>
+            {/* Hover Glow Effect */}
+            <LoginDialog
+                isOpen={loginDialogOpen}
+                onClose={() => setLoginDialogOpen(false)}
+                action={loginAction}
+            />
         </Tilt>
-    );
+    )
 }

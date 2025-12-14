@@ -76,272 +76,434 @@ Base URL: `/api/cart`, `/api/orders`, `/api/vouchers`
 
 ---
 
-## Orders API
+## Order Management APIs
 
-### 1. Create Order
+### 16. Create Order
 - **URL**: `POST /api/orders`
-- **Auth**: Required
+- **Auth**: Required (JWT Token)
+- **Description**: Create a new order. User ID is automatically extracted from JWT token
 - **Request Body**:
 ```json
 {
   "addressId": 1,
-  "voucherCode": "DISCOUNT10",
-  "paymentMethod": "CREDIT_CARD",
+  "voucherCode": "SUMMER2024",
+  "paymentMethod": "VNPAY",
   "shippingFee": 30000,
-  "note": "Please deliver in the morning",
+  "note": "Please deliver before 5 PM",
   "items": [
     {
-      "variantId": 1,
+      "productId": 10,
+      "variantId": 101,
+      "productName": "Nike Air Max",
+      "sku": "NIKE-AM-BLK-42",
+      "attributesName": "Size: 42, Color: Black",
       "quantity": 2,
-      "price": 1000000
+      "price": 200000
+    },
+    {
+      "productId": 11,
+      "variantId": 102,
+      "productName": "Adidas Ultraboost",
+      "sku": "ADIDAS-UB-WHT-43",
+      "attributesName": "Size: 43, Color: White",
+      "quantity": 1,
+      "price": 100000
     }
   ]
 }
 ```
+- **Payment Methods**: `COD`, `VNPAY`, `MOMO`
 - **Response**:
 ```json
 {
+  "code": 1000,
   "message": "Order created successfully",
   "result": {
-    "id": 1,
-    "userId": "user-id-123",
+    "id": 12345,
+    "userId": "user123",
     "addressId": 1,
-    "voucherId": 1,
+    "voucherId": 5,
     "status": "PENDING",
-    "paymentMethod": "CREDIT_CARD",
+    "paymentMethod": "VNPAY",
     "paymentStatus": "UNPAID",
-    "subtotal": 2000000,
-    "discount": 0,
+    "subtotal": 500000,
+    "discount": 50000,
     "shippingFee": 30000,
-    "total": 2030000,
-    "note": "Please deliver in the morning",
-    "createdAt": "2024-01-01T00:00:00",
+    "total": 480000,
+    "note": "Please deliver before 5 PM",
+    "createdAt": "2024-12-13T10:30:00",
     "paidAt": null,
     "shippedAt": null,
     "completedAt": null,
     "cancelledAt": null,
     "items": [
       {
-        "id": 1,
-        "variantId": 1,
+        "variantId": 101,
+        "productName": "Nike Air Max",
+        "size": "42",
+        "color": "Black",
+        "price": 200000,
         "quantity": 2,
-        "price": 1000000,
-        "subtotal": 2000000
+        "subtotal": 400000
+      },
+      {
+        "variantId": 102,
+        "productName": "Adidas Ultraboost",
+        "size": "43",
+        "color": "White",
+        "price": 100000,
+        "quantity": 1,
+        "subtotal": 100000
+      }
+    ]
+  }
+}
+```
+- **Payment Methods**: `COD`, `VNPAY`, `MOMO`
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Order created successfully",
+  "result": {
+    "id": 12345,
+    "userId": "user123",
+    "addressId": 1,
+    "voucherId": 5,
+    "status": "PENDING",
+    "paymentMethod": "VNPAY",
+    "paymentStatus": "UNPAID",
+    "subtotal": 500000,
+    "discount": 50000,
+    "shippingFee": 30000,
+    "total": 480000,
+    "note": "Please deliver before 5 PM",
+    "createdAt": "2024-12-13T10:30:00",
+    "paidAt": null,
+    "shippedAt": null,
+    "completedAt": null,
+    "cancelledAt": null,
+    "items": [
+      {
+        "variantId": 101,
+        "productName": "Nike Air Max",
+        "size": "42",
+        "color": "Black",
+        "price": 200000,
+        "quantity": 2,
+        "subtotal": 400000
+      },
+      {
+        "variantId": 102,
+        "productName": "Adidas Ultraboost",
+        "size": "43",
+        "color": "White",
+        "price": 100000,
+        "quantity": 1,
+        "subtotal": 100000
       }
     ]
   }
 }
 ```
 
-### 2. Get Order by ID
+### 17. Get Order by ID
 - **URL**: `GET /api/orders/{id}`
-- **Auth**: Required
-- **Response**: Same structure as Create Order with message "Order details"
+- **Auth**: Required (JWT Token)
+- **Path Parameters**:
+  - `id` (required): Order ID
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Order details",
+  "result": {
+    "id": 12345,
+    "userId": "user123",
+    "addressId": 1,
+    "voucherId": 5,
+    "status": "PENDING",
+    "paymentMethod": "VNPAY",
+    "paymentStatus": "UNPAID",
+    "subtotal": 500000,
+    "discount": 50000,
+    "shippingFee": 30000,
+    "total": 480000,
+    "note": "Please deliver before 5 PM",
+    "createdAt": "2024-12-13T10:30:00",
+    "paidAt": null,
+    "shippedAt": null,
+    "completedAt": null,
+    "cancelledAt": null,
+    "items": [/* array of order items */]
+  }
+}
+```
 
-### 3. Get All Orders (Admin)
+### 18. Get All Orders (Admin Only)
 - **URL**: `GET /api/orders?page={page}&limit={limit}`
-- **Auth**: Required (ADMIN role)
+- **Auth**: Required (JWT Token with ADMIN role)
 - **Query Parameters**:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 12)
 - **Response**:
 ```json
 {
+  "code": 1000,
   "message": "All orders",
   "result": {
     "result": [/* array of orders */],
-    "total": 500,
+    "total": 150,
     "page": 1,
     "size": 12,
-    "totalPages": 42
+    "totalPages": 13
   }
 }
 ```
 
-### 4. Get My Orders
+### 19. Get My Orders
 - **URL**: `GET /api/orders/my-orders?page={page}&limit={limit}`
-- **Auth**: Required
+- **Auth**: Required (JWT Token)
 - **Query Parameters**:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 12)
-- **Response**: Same structure as Get All Orders with message "My orders"
-
-### 5. Get Orders by User ID (Admin)
-- **URL**: `GET /api/orders/user/{userId}?page={page}&limit={limit}`
-- **Auth**: Required (ADMIN role)
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1)
-  - `limit` (optional): Items per page (default: 12)
-- **Response**: Same structure as Get All Orders with message "Orders by user"
-
-### 6. Get Orders by Status (Admin)
-- **URL**: `GET /api/orders/status/{status}?page={page}&limit={limit}`
-- **Auth**: Required (ADMIN role)
-- **Path Parameters**:
-  - `status`: Order status (PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED)
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1)
-  - `limit` (optional): Items per page (default: 12)
-- **Response**: Same structure as Get All Orders with message "Orders by status"
-
-### 7. Get Orders by User and Status (Admin)
-- **URL**: `GET /api/orders/user/{userId}/status/{status}?page={page}&limit={limit}`
-- **Auth**: Required (ADMIN role)
-- **Path Parameters**:
-  - `userId`: User ID
-  - `status`: Order status
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1)
-  - `limit` (optional): Items per page (default: 12)
-- **Response**: Same structure as Get All Orders with message "Orders by user and status"
-
-### 8. Update Order Status (Admin)
-- **URL**: `PUT /api/orders/{id}/status?status={status}`
-- **Auth**: Required (ADMIN role)
-- **Query Parameters**:
-  - `status`: New order status (PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED)
-- **Response**: Same structure as Create Order with message "Order status updated successfully"
-
-### 9. Update Payment Status (Admin)
-- **URL**: `PUT /api/orders/{id}/payment-status?status={status}`
-- **Auth**: Required (ADMIN role)
-- **Query Parameters**:
-  - `status`: New payment status (UNPAID, PAID, REFUNDED)
-- **Response**: Same structure as Create Order with message "Payment status updated successfully"
-
-### 10. Cancel Order
-- **URL**: `PUT /api/orders/{id}/cancel`
-- **Auth**: Required
-- **Response**: Same structure as Create Order with message "Order cancelled successfully"
-
----
-
-## Vouchers API
-
-### 1. Create Voucher
-- **URL**: `POST /api/vouchers`
-- **Auth**: Required (ADMIN role)
-- **Request Body**:
-```json
-{
-  "code": "DISCOUNT10",
-  "description": "10% discount",
-  "discountType": "PERCENTAGE",
-  "discountValue": 10,
-  "minOrderValue": 100000,
-  "maxDiscountAmount": 50000,
-  "startDate": "2024-01-01T00:00:00",
-  "endDate": "2024-12-31T23:59:59",
-  "usageLimit": 100,
-  "usedCount": 0,
-  "active": true
-}
-```
+- **Description**: Get all orders of current user
 - **Response**:
 ```json
 {
-  "message": "Voucher created successfully",
+  "code": 1000,
+  "message": "My orders",
   "result": {
-    "id": 1,
-    "code": "DISCOUNT10",
-    "description": "10% discount",
-    "discountType": "PERCENTAGE",
-    "discountValue": 10,
-    "minOrderValue": 100000,
-    "maxDiscountAmount": 50000,
-    "startDate": "2024-01-01T00:00:00",
-    "endDate": "2024-12-31T23:59:59",
-    "usageLimit": 100,
-    "usedCount": 0,
-    "active": true,
-    "createdAt": "2024-01-01T00:00:00",
-    "updatedAt": "2024-01-01T00:00:00"
-  }
-}
-```
-
-### 2. Update Voucher
-- **URL**: `PUT /api/vouchers/{id}`
-- **Auth**: Required (ADMIN role)
-- **Request Body**: Same as Create Voucher
-- **Response**: Same structure as Create Voucher with message "Voucher updated successfully"
-
-### 3. Delete Voucher
-- **URL**: `DELETE /api/vouchers/{id}`
-- **Auth**: Required (ADMIN role)
-- **Response**:
-```json
-{
-  "message": "Voucher deleted successfully"
-}
-```
-
-### 4. Get Voucher by ID
-- **URL**: `GET /api/vouchers/{id}`
-- **Auth**: Not required
-- **Response**: Same structure as Create Voucher with message "Voucher details"
-
-### 5. Get Voucher by Code
-- **URL**: `GET /api/vouchers/code/{code}`
-- **Auth**: Not required
-- **Response**: Same structure as Create Voucher with message "Voucher details"
-
-### 6. Get All Vouchers (Admin)
-- **URL**: `GET /api/vouchers?page={page}&limit={limit}`
-- **Auth**: Required (ADMIN role)
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1)
-  - `limit` (optional): Items per page (default: 12)
-- **Response**:
-```json
-{
-  "message": "All vouchers",
-  "result": {
-    "result": [/* array of vouchers */],
-    "total": 50,
+    "result": [/* array of orders */],
+    "total": 25,
     "page": 1,
     "size": 12,
-    "totalPages": 5
+    "totalPages": 3
   }
 }
 ```
 
-### 7. Get Active Vouchers
-- **URL**: `GET /api/vouchers/active?page={page}&limit={limit}`
-- **Auth**: Not required
+### 20. Get Orders by User ID
+- **URL**: `GET /api/orders/user/{userId}?page={page}&limit={limit}`
+- **Auth**: Required (JWT Token)
+- **Path Parameters**:
+  - `userId` (required): User ID
 - **Query Parameters**:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 12)
-- **Response**: Same structure as Get All Vouchers with message "Active vouchers"
-
----
-
-## Enums
-
-### Order Status
-- `PENDING`: Order is pending
-- `PROCESSING`: Order is being processed
-- `SHIPPED`: Order has been shipped
-- `DELIVERED`: Order has been delivered
-- `CANCELLED`: Order has been cancelled
-
-### Payment Status
-- `UNPAID`: Payment not received
-- `PAID`: Payment received
-- `REFUNDED`: Payment refunded
-
-### Payment Method
-- `CREDIT_CARD`: Credit card payment
-- `DEBIT_CARD`: Debit card payment
-- `CASH_ON_DELIVERY`: Cash on delivery
-- `BANK_TRANSFER`: Bank transfer
-
----
-
-## Authentication
-
-Most endpoints require JWT authentication. Include the token in the Authorization header:
-
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "User orders",
+  "result": {
+    "result": [/* array of orders */],
+    "total": 25,
+    "page": 1,
+    "size": 12,
+    "totalPages": 3
+  }
+}
 ```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### 21. Get Orders by Status
+- **URL**: `GET /api/orders/status/{status}?page={page}&limit={limit}`
+- **Auth**: Required (JWT Token)
+- **Path Parameters**:
+  - `status` (required): Order status (`PENDING`, `CONFIRMED`, `PROCESSING`, `SHIPPED`, `COMPLETED`, `CANCELLED`)
+- **Query Parameters**:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 12)
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Orders by status",
+  "result": {
+    "result": [/* array of orders with specified status */],
+    "total": 40,
+    "page": 1,
+    "size": 12,
+    "totalPages": 4
+  }
+}
 ```
+
+### 22. Get Orders by User ID and Status
+- **URL**: `GET /api/orders/user/{userId}/status/{status}?page={page}&limit={limit}`
+- **Auth**: Required (JWT Token)
+- **Path Parameters**:
+  - `userId` (required): User ID
+  - `status` (required): Order status
+- **Query Parameters**:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 12)
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "User orders by status",
+  "result": {
+    "result": [/* array of orders */],
+    "total": 10,
+    "page": 1,
+    "size": 12,
+    "totalPages": 1
+  }
+}
+```
+
+### 23. Update Order Status (Admin Only)
+- **URL**: `PUT /api/orders/{id}/status?status={status}`
+- **Auth**: Required (JWT Token with ADMIN role)
+- **Path Parameters**:
+  - `id` (required): Order ID
+- **Query Parameters**:
+  - `status` (required): New order status (`PENDING`, `CONFIRMED`, `PROCESSING`, `SHIPPED`, `COMPLETED`, `CANCELLED`)
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Order status updated",
+  "result": {
+    "id": 12345,
+    "status": "SHIPPED",
+    "shippedAt": "2024-12-13T14:30:00",
+    /* other order fields */
+  }
+}
+```
+
+### 24. Update Payment Status (Admin Only)
+- **URL**: `PUT /api/orders/{id}/payment-status?status={status}`
+- **Auth**: Required (JWT Token with ADMIN role)
+- **Path Parameters**:
+  - `id` (required): Order ID
+- **Query Parameters**:
+  - `status` (required): New payment status (`UNPAID`, `PAID`, `REFUNDED`, `FAILED`)
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Payment status updated",
+  "result": {
+    "id": 12345,
+    "paymentStatus": "PAID",
+    "paidAt": "2024-12-13T11:00:00",
+    /* other order fields */
+  }
+}
+```
+
+### 25. Update Payment Status (Internal)
+- **URL**: `PUT /api/orders/internal/{id}/payment-status?status={status}`
+- **Auth**: Not required (Service-to-service only)
+- **Path Parameters**:
+  - `id` (required): Order ID
+- **Query Parameters**:
+  - `status` (required): New payment status (`UNPAID`, `PAID`, `REFUNDED`, `FAILED`)
+- **Description**: Internal endpoint for payment service to update payment status after receiving payment confirmation from VNPay
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Payment status updated",
+  "result": {
+    "id": 12345,
+    "paymentStatus": "PAID",
+    "paidAt": "2024-12-13T11:00:00",
+    /* other order fields */
+  }
+}
+```
+
+### 26. Cancel Order
+- **URL**: `DELETE /api/orders/{id}`
+- **Auth**: Required (JWT Token)
+- **Path Parameters**:
+  - `id` (required): Order ID
+- **Description**: Cancel an order. Only orders with status PENDING or CONFIRMED can be cancelled
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Order cancelled successfully",
+  "result": null
+}
+```
+
+### 27. Get Sales Statistics (Admin Only)
+- **URL**: `GET /api/orders/statistics/sales`
+- **Auth**: Required (JWT Token with ADMIN role)
+- **Description**: Get overall sales statistics including total revenue, orders count, etc.
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Sales statistics",
+  "result": {
+    "totalRevenue": 15000000,
+    "totalOrders": 150,
+    "completedOrders": 120,
+    "cancelledOrders": 10,
+    "pendingOrders": 20,
+    "averageOrderValue": 100000
+  }
+}
+```
+
+### 28. Get Variant Sold Data (Admin Only)
+- **URL**: `GET /api/orders/statistics/variant-sold`
+- **Auth**: Required (JWT Token with ADMIN role)
+- **Description**: Get statistics of product variants sold for inventory and analytics
+- **Response**:
+```json
+{
+  "code": 1000,
+  "message": "Variant sold data",
+  "result": {
+    "variants": [
+      {
+        "variantId": 101,
+        "productName": "Nike Air Max",
+        "size": "42",
+        "color": "Black",
+        "totalSold": 45,
+        "totalRevenue": 9000000
+      },
+      {
+        "variantId": 102,
+        "productName": "Adidas Ultraboost",
+        "size": "43",
+        "color": "White",
+        "totalSold": 30,
+        "totalRevenue": 3000000
+      }
+    ]
+  }
+}
+```
+
+### Order Status:
+```
+  PENDING,
+  PAID,
+  SHIPPING,
+  COMPLETED,
+  CANCELLED
+```
+
+### Payment Status:
+```
+  UNPAID,
+  PAID,
+  REFUNDED,
+  FAILED
+```
+
+### Notes:
+- User ID is automatically extracted from JWT token for order creation
+- Orders can only be cancelled if status is PENDING or CONFIRMED
+- Payment status is automatically updated by payment service via internal endpoint
+- Admin endpoints require ADMIN role in JWT token
+- All list endpoints support pagination with default page=1 and limit=12

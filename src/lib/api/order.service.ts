@@ -1,111 +1,137 @@
-import apiClient from "./client";
+import { apiClient } from "./client";
+import { paymentClient } from "./payment.client";
 import type {
-    ApiResponse,
-    PaginatedResponse,
     Order,
     CreateOrderRequest,
-    Voucher,
-    OrderStatus,
-    PaymentStatus
-} from "@/types";
+    CreateOrderResponse,
+    OrderListResponse,
+    CreatePaymentRequest,
+    CreatePaymentResponse,
+    PaymentReturnResponse,
+    SalesStatistics,
+    VariantSoldData
+} from "@/types/order";
 
-// Orders
-export async function createOrder(data: CreateOrderRequest): Promise<Order> {
-    const response = await apiClient.post<ApiResponse<Order>>(
-        "/orders",
-        data
-    );
+/**
+ * Order Management APIs
+ */
+
+// Create a new order
+export const createOrder = async (data: CreateOrderRequest): Promise<Order> => {
+    const response = await apiClient.post<CreateOrderResponse>("/orders", data);
     return response.data.result;
-}
+};
 
-export async function getOrderById(id: number): Promise<Order> {
-    const response = await apiClient.get<ApiResponse<Order>>(`/orders/${id}`);
+// Get order by ID
+export const getOrderById = async (id: number): Promise<Order> => {
+    const response = await apiClient.get<CreateOrderResponse>(`/orders/${id}`);
     return response.data.result;
-}
+};
 
-export async function getMyOrders(params?: {
+// Get all orders (Admin only)
+export const getAllOrders = async (params?: {
     page?: number;
     limit?: number;
-}): Promise<PaginatedResponse<Order>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Order>>>(
-        "/orders/my-orders",
-        { params }
-    );
+}): Promise<OrderListResponse["result"]> => {
+    const response = await apiClient.get<OrderListResponse>("/orders", { params });
     return response.data.result;
-}
+};
 
-export async function cancelOrder(id: number): Promise<Order> {
-    const response = await apiClient.put<ApiResponse<Order>>(
-        `/orders/${id}/cancel`
-    );
-    return response.data.result;
-}
-
-// Admin only
-export async function getAllOrders(params?: {
+// Get my orders
+export const getMyOrders = async (params?: {
     page?: number;
     limit?: number;
-}): Promise<PaginatedResponse<Order>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Order>>>(
-        "/orders",
+}): Promise<OrderListResponse["result"]> => {
+    const response = await apiClient.get<OrderListResponse>("/orders/my-orders", { params });
+    return response.data.result;
+};
+
+// Get orders by user ID
+export const getOrdersByUserId = async (
+    userId: string,
+    params?: { page?: number; limit?: number }
+): Promise<OrderListResponse["result"]> => {
+    const response = await apiClient.get<OrderListResponse>(`/orders/user/${userId}`, { params });
+    return response.data.result;
+};
+
+// Get orders by status
+export const getOrdersByStatus = async (
+    status: string,
+    params?: { page?: number; limit?: number }
+): Promise<OrderListResponse["result"]> => {
+    const response = await apiClient.get<OrderListResponse>(`/orders/status/${status}`, { params });
+    return response.data.result;
+};
+
+// Get orders by user ID and status
+export const getOrdersByUserIdAndStatus = async (
+    userId: string,
+    status: string,
+    params?: { page?: number; limit?: number }
+): Promise<OrderListResponse["result"]> => {
+    const response = await apiClient.get<OrderListResponse>(
+        `/orders/user/${userId}/status/${status}`,
         { params }
     );
     return response.data.result;
-}
+};
 
-export async function getOrdersByStatus(
-    status: OrderStatus,
-    params?: {
-        page?: number;
-        limit?: number;
-    }
-): Promise<PaginatedResponse<Order>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Order>>>(
-        `/orders/status/${status}`,
-        { params }
-    );
-    return response.data.result;
-}
-
-export async function updateOrderStatus(
-    id: number,
-    status: OrderStatus
-): Promise<Order> {
-    const response = await apiClient.put<ApiResponse<Order>>(
+// Update order status (Admin only)
+export const updateOrderStatus = async (id: number, status: string): Promise<Order> => {
+    const response = await apiClient.put<CreateOrderResponse>(
         `/orders/${id}/status`,
         null,
         { params: { status } }
     );
     return response.data.result;
-}
+};
 
-export async function updatePaymentStatus(
-    id: number,
-    status: PaymentStatus
-): Promise<Order> {
-    const response = await apiClient.put<ApiResponse<Order>>(
+// Update payment status (Admin only)
+export const updatePaymentStatus = async (id: number, status: string): Promise<Order> => {
+    const response = await apiClient.put<CreateOrderResponse>(
         `/orders/${id}/payment-status`,
         null,
         { params: { status } }
     );
     return response.data.result;
-}
+};
 
-// Vouchers
-export async function getVoucherByCode(code: string): Promise<Voucher> {
-    const response = await apiClient.get<ApiResponse<Voucher>>(
-        `/vouchers/code/${code}`
+// Cancel order
+export const cancelOrder = async (id: number): Promise<void> => {
+    await apiClient.delete(`/orders/${id}`);
+};
+
+// Get sales statistics (Admin only)
+export const getSalesStatistics = async (): Promise<SalesStatistics> => {
+    const response = await apiClient.get<{ code: number; message: string; result: SalesStatistics }>(
+        "/orders/statistics/sales"
     );
     return response.data.result;
-}
+};
 
-export async function getActiveVouchers(params?: {
-    page?: number;
-    limit?: number;
-}): Promise<PaginatedResponse<Voucher>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Voucher>>>(
-        "/vouchers/active",
-        { params }
-    );
-    return response.data.result;
-}
+// Get variant sold data (Admin only)
+export const getVariantSoldData = async (): Promise<VariantSoldData[]> => {
+    const response = await apiClient.get<{
+        code: number;
+        message: string;
+        result: { variants: VariantSoldData[] };
+    }>("/orders/statistics/variant-sold");
+    return response.data.result.variants;
+};
+
+/**
+ * VNPay Payment APIs (Port 8085)
+ */
+
+// Create VNPay payment URL
+export const createPaymentUrl = async (data: CreatePaymentRequest): Promise<CreatePaymentResponse> => {
+    const response = await paymentClient.post<CreatePaymentResponse>("/create-payment", data);
+    return response.data;
+};
+
+// Payment return callback (handled by backend, but we can call to verify)
+export const verifyPaymentReturn = async (queryParams: string): Promise<PaymentReturnResponse> => {
+    const response = await paymentClient.get<PaymentReturnResponse>(`/payment-return?${queryParams}`);
+    return response.data;
+};

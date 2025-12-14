@@ -140,7 +140,7 @@ export default function ProductsPage() {
                                     {search ? `Kết quả tìm kiếm: "${search}"` : "Máy tính Laptop"}
                                 </h1>
                                 <p className="text-sm text-gray-600 mt-1">
-                                    {filteredAndSortedProducts.length} sản phẩm
+                                    {data?.total} sản phẩm
                                 </p>
                             </div>
                             <SortDropdown />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { getProductById, getAllProducts } from "@/lib/api/product.service";
 import { extractIdFromSlug } from "@/lib/utils/slug";
 import { Header } from "@/components/layout/Header";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useWishlistStore } from "@/lib/store/wishlist.store";
 import { useCartStore } from "@/lib/store/cart.store";
+import { useAuthStore } from "@/lib/store/auth.store";
 import { cn } from "@/lib/utils";
 import { ImageGallery } from "@/components/products/ImageGallery";
 import { AnimatedPrice } from "@/components/ui/AnimatedPrice";
@@ -19,6 +20,7 @@ import { VariantSelector } from "@/components/products/VariantSelector";
 import { CartToast } from "@/components/ui/CartToast";
 import { ExpandableDescription } from "@/components/ui/ExpandableDescription";
 import { RelatedProducts } from "@/components/products/RelatedProducts";
+import { LoginDialog } from "@/components/ui/LoginDialog";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -30,6 +32,10 @@ export default function ProductDetailPage() {
     const [selectedSize, setSelectedSize] = useState<string>();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
     const { addItem } = useCartStore();
+    const { isAuthenticated } = useAuthStore();
+    const router = useRouter();
+    const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+    const [loginAction, setLoginAction] = useState<"cart" | "wishlist">("cart");
 
     // Extract ID from slug (format: {slug}-{id})
     const productId = slugWithId ? extractIdFromSlug(slugWithId) : null;
@@ -110,6 +116,12 @@ export default function ProductDetailPage() {
     const inWishlist = isInWishlist(product.id);
 
     const handleWishlistToggle = () => {
+        if (!isAuthenticated) {
+            setLoginAction("wishlist");
+            setLoginDialogOpen(true);
+            return;
+        }
+
         if (inWishlist) {
             removeFromWishlist(product.id);
         } else {
@@ -118,6 +130,12 @@ export default function ProductDetailPage() {
     };
 
     const handleAddToCart = async () => {
+        if (!isAuthenticated) {
+            setLoginAction("cart");
+            setLoginDialogOpen(true);
+            return;
+        }
+
         try {
             // Get first variant or use product ID
             const variantId = product.variants?.[0]?.id || product.id;
@@ -553,6 +571,13 @@ export default function ProductDetailPage() {
                     </motion.div>
                 )}
             </div>
+
+            {/* Login Dialog */}
+            <LoginDialog
+                isOpen={loginDialogOpen}
+                onClose={() => setLoginDialogOpen(false)}
+                action={loginAction}
+            />
         </div>
     );
 }

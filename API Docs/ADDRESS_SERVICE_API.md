@@ -223,111 +223,181 @@
 - All endpoints require JWT authentication
 - Only the owner of the address can view, update, or delete it
 
+## Address APIs (GHN - Giao Hàng Nhanh)
+
 ### 10. Get All Provinces
-- **URL**: `GET https://tinhthanhpho.com/api/v1/provinces`
-- **Auth**: Not required
-- **Query Parameters**:
-  - `keyword` (optional): Search keyword or ID
-  - `limit` (optional): Number of results per page (default: 20)
-  - `page` (optional): Page number (default: 1)
+- **URL**: `GET https://online-gateway.ghn.vn/shiip/public-api/master-data/province`
+- **Auth**: Required (GHN Token)
+- **Headers**:
+  - `token`: Your GHN API token (for account authentication)
 - **Response**:
 ```json
 {
-  "success": true,
+  "code": 200,
+  "message": "Success",
   "data": [
     {
-      "code": "01",
-      "name": "Hà Nội",
-      "type": "Thành phố"
+      "ProvinceID": 202,
+      "ProvinceName": "Hồ Chí Minh",
+      "CountryID": 1,
+      "Code": 8,
+      "NameExtension": [
+        "Hồ Chí Minh",
+        "TP.Hồ Chí Minh",
+        "TP. Hồ Chí Minh",
+        "TP Hồ Chí Minh",
+        "Thành phố Hồ Chí Minh",
+        "HCM",
+        "hochiminh",
+        "saigon",
+        "sg"
+      ],
+      "IsEnable": 1,
+      "RegionID": 1,
+      "UpdatedBy": 1718600,
+      "CreatedAt": "2019-12-05 15:41:26.891217",
+      "UpdatedAt": "2019-12-05 15:41:26.891217",
+      "CanUpdateCOD": false,
+      "Status": 1
     },
     {
-      "code": "79",
-      "name": "Hồ Chí Minh",
-      "type": "Thành phố"
+      "ProvinceID": 201,
+      "ProvinceName": "Hà Nội",
+      "CountryID": 1,
+      "Code": 1,
+      "NameExtension": [
+        "Hà Nội",
+        "Ha Noi",
+        "HN",
+        "hanoi"
+      ],
+      "IsEnable": 1,
+      "RegionID": 2,
+      "CanUpdateCOD": false,
+      "Status": 1
     }
-  ],
-  "metadata": {
-    "total": 63,
-    "page": 1,
-    "limit": 20
-  }
+  ]
 }
 ```
 
 ### 11. Get Districts by Province
-- **URL**: `GET https://tinhthanhpho.com/api/v1/provinces/{provinceCode}/districts`
-- **Auth**: Not required
-- **Path Parameters**:
-  - `provinceCode` (required): Province code
+- **URL**: `GET https://online-gateway.ghn.vn/shiip/public-api/master-data/district`
+- **Auth**: Required (GHN Token)
+- **Headers**:
+  - `token`: Your GHN API token
 - **Query Parameters**:
-  - `keyword` (optional): Search keyword or ID
-  - `limit` (optional): Number of results per page (default: 20)
-  - `page` (optional): Page number (default: 1)
+  - `province_id` (required): Province ID from province API
+- **Example**: `GET https://online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=202`
 - **Response**:
 ```json
 {
-  "success": true,
+  "code": 200,
+  "message": "Success",
   "data": [
     {
-      "code": "001",
-      "name": "Ba Đình",
-      "type": "Quận",
-      "province_code": "01"
+      "DistrictID": 3695,
+      "ProvinceID": 202,
+      "DistrictName": "Thành Phố Thủ Đức",
+      "Code": 3695,
+      "Type": 3,
+      "SupportType": 3,
+      "NameExtension": [
+        "TP Thủ Đức",
+        "thành phố thủ đức",
+        "TP. Thủ Đức",
+        "TP. Thu Duc",
+        "thuduc"
+      ],
+      "IsEnable": 1,
+      "CanUpdateCOD": false,
+      "Status": 1,
+      "CreatedDate": "2020-12-25T08:02:27.479Z",
+      "UpdatedDate": "2021-09-03T07:43:25.338Z"
     },
     {
-      "code": "002",
-      "name": "Hoàn Kiếm",
-      "type": "Quận",
-      "province_code": "01"
+      "DistrictID": 1442,
+      "ProvinceID": 202,
+      "DistrictName": "Quận 1",
+      "Code": 1442,
+      "Type": 1,
+      "SupportType": 3,
+      "NameExtension": [
+        "Q. 1",
+        "Quan 1",
+        "Q1"
+      ],
+      "IsEnable": 1,
+      "CanUpdateCOD": false,
+      "Status": 1
     }
-  ],
-  "metadata": {
-    "total": 30,
-    "page": 1,
-    "limit": 20
-  }
+  ]
 }
 ```
 
 ### 12. Get Wards by District
-- **URL**: `GET https://tinhthanhpho.com/api/v1/districts/{districtCode}/wards`
-- **Auth**: Not required
-- **Path Parameters**:
-  - `districtCode` (required): District code
+- **URL**: `GET https://online-gateway.ghn.vn/shiip/public-api/master-data/ward`
+- **Auth**: Required (GHN Token)
+- **Headers**:
+  - `token`: Your GHN API token
 - **Query Parameters**:
-  - `keyword` (optional): Search keyword or ID
-  - `limit` (optional): Number of results per page (default: 20)
-  - `page` (optional): Page number (default: 1)
+  - `district_id` (required): District ID from district API
+- **Example**: `GET https://online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=3695`
 - **Response**:
 ```json
 {
-  "success": true,
+  "code": 200,
+  "message": "Success",
   "data": [
     {
-      "code": "00001",
-      "name": "Phúc Xá",
-      "type": "Phường",
-      "district_code": "001",
-      "province_code": "01"
+      "WardCode": "90768",
+      "DistrictID": 3695,
+      "WardName": "Phường An Khánh",
+      "NameExtension": [
+        "P. An Khánh",
+        "P. An Khanh",
+        "ankhanh"
+      ],
+      "CanUpdateCOD": true,
+      "SupportType": 3,
+      "Status": 1,
+      "CreatedDate": "2020-12-25T08:37:00.733Z",
+      "UpdatedDate": "2021-09-02T17:00:03.375Z"
     },
     {
-      "code": "00004",
-      "name": "Trúc Bạch",
-      "type": "Phường",
-      "district_code": "001",
-      "province_code": "01"
+      "WardCode": "90769",
+      "DistrictID": 3695,
+      "WardName": "Phường Bình Chiểu",
+      "NameExtension": [
+        "P. Bình Chiểu",
+        "P. Binh Chieu",
+        "binhchieu"
+      ],
+      "CanUpdateCOD": true,
+      "SupportType": 3,
+      "Status": 1
     }
-  ],
-  "metadata": {
-    "total": 15,
-    "page": 1,
-    "limit": 20
-  }
+  ]
 }
 ```
 
+### Address Selection Flow:
+1. **Get Provinces**: Call province API to get list of provinces
+2. **Get Districts**: Select a province, then call district API with `province_id`
+3. **Get Wards**: Select a district, then call ward API with `district_id`
+4. **Save Address**: Use the selected IDs to save user's address
+
+### Field Descriptions:
+- **ProvinceID/DistrictID/WardCode**: Unique identifier for location
+- **NameExtension**: Alternative names for easier search
+- **IsEnable**: Whether the location is active (1 = active, 0 = inactive)
+- **SupportType**: Type of delivery support (3 = full support)
+- **CanUpdateCOD**: Whether COD (Cash on Delivery) is supported
+- **Status**: Location status (1 = active)
+
 ### Notes:
-- These are external APIs from `https://tinhthanhpho.com`
-- No authentication required
-- Use these APIs to populate province/district/ward dropdowns in address forms
+- All APIs require GHN token in header for authentication
+- Use `ProvinceID`, `DistrictID`, `WardCode` to identify locations
+- `NameExtension` array contains various name formats for flexible search
+- These APIs are provided by GHN (Giao Hàng Nhanh) shipping service
 - Province → District → Ward hierarchy must be followed
+- Store these IDs in your address records for shipping calculation

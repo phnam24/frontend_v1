@@ -7,6 +7,7 @@ import { toast } from "sonner";
 interface CartState {
     cart: Cart | null;
     isLoading: boolean;
+    selectedItemIds: number[]; // IDs of selected items for checkout
 
     // Actions
     fetchCart: () => Promise<void>;
@@ -14,6 +15,12 @@ interface CartState {
     updateItem: (itemId: number, quantity: number) => Promise<void>;
     removeItem: (itemId: number) => Promise<void>;
     clearCart: () => Promise<void>;
+    removeSelectedItems: () => Promise<void>;
+
+    // Selection actions
+    toggleItemSelection: (itemId: number) => void;
+    selectAllItems: () => void;
+    clearSelection: () => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -21,6 +28,7 @@ export const useCartStore = create<CartState>()(
         (set) => ({
             cart: null,
             isLoading: false,
+            selectedItemIds: [],
 
             fetchCart: async () => {
                 try {
@@ -82,7 +90,7 @@ export const useCartStore = create<CartState>()(
                 try {
                     set({ isLoading: true });
                     await cartService.clearCart();
-                    set({ cart: null, isLoading: false });
+                    set({ cart: null, selectedItemIds: [], isLoading: false });
                     toast.success("Đã xóa toàn bộ giỏ hàng");
                 } catch (error: any) {
                     set({ isLoading: false });
@@ -91,11 +99,59 @@ export const useCartStore = create<CartState>()(
                     throw error;
                 }
             },
+
+            removeSelectedItems: async () => {
+                const state = useCartStore.getState();
+                if (!state.cart || state.selectedItemIds.length === 0) {
+                    return;
+                }
+
+                try {
+                    set({ isLoading: true });
+
+                    // Remove each selected item
+                    for (const itemId of state.selectedItemIds) {
+                        await cartService.removeFromCart(itemId);
+                    }
+
+                    // Refresh cart and clear selection
+                    const cart = await cartService.getMyCart();
+                    set({ cart, selectedItemIds: [], isLoading: false });
+                } catch (error: any) {
+                    set({ isLoading: false });
+                    const message = error.response?.data?.message || "Không thể xóa sản phẩm";
+                    toast.error(message);
+                    throw error;
+                }
+            },
+
+            // Selection methods
+            toggleItemSelection: (itemId: number) => {
+                set((state) => {
+                    const isSelected = state.selectedItemIds.includes(itemId);
+                    return {
+                        selectedItemIds: isSelected
+                            ? state.selectedItemIds.filter(id => id !== itemId)
+                            : [...state.selectedItemIds, itemId]
+                    };
+                });
+            },
+
+            selectAllItems: () => {
+                set((state) => ({
+                    selectedItemIds: state.cart?.items.map(item => item.id) || []
+                }));
+            },
+
+            clearSelection: () => {
+                set({ selectedItemIds: [] });
+            },
         }),
         {
             name: "cart-storage",
             partialize: (state) => ({
-                cart: state.cart
+                cart: state.cart,
+                selectedItemIds: state.selectedItemIds
             }),
         }
     )

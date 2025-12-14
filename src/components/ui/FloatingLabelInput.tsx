@@ -40,6 +40,8 @@ export const FloatingLabelInput = forwardRef<HTMLInputElement, FloatingLabelInpu
                     <input
                         ref={ref || inputRef}
                         type={inputType}
+                        {...props}
+                        value={props.value ?? ""}
                         className={cn(
                             "peer w-full px-4 py-3 pt-6 pb-2 rounded-lg border-2 transition-all duration-200",
                             "bg-white text-gray-900 placeholder-transparent",
@@ -54,7 +56,6 @@ export const FloatingLabelInput = forwardRef<HTMLInputElement, FloatingLabelInpu
                         placeholder={label}
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
-                        {...props}
                     />
 
                     {/* Floating Label */}

@@ -25,9 +25,11 @@ import { generateProductSlug } from "@/lib/utils/slug";
 
 interface CartItemProps {
     item: CartItemType;
+    isSelected?: boolean;
+    onToggleSelect?: () => void;
 }
 
-export function CartItem({ item }: CartItemProps) {
+export function CartItem({ item, isSelected = false, onToggleSelect }: CartItemProps) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const { updateItem, removeItem, isLoading } = useCartStore();
 
@@ -54,63 +56,102 @@ export function CartItem({ item }: CartItemProps) {
     const productImage = product?.avatar || product?.firstImage || "/placeholder-product.png";
     const productName = product?.name || "Đang tải...";
     const productSlug = product ? generateProductSlug(product.slug, product.id) : "#";
+    const itemTotal = item.priceSnapshot * item.quantity;
 
     return (
         <>
             <motion.div
+                layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.3 }}
-                className="flex gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow"
+                className={`bg-white rounded-xl border-2 transition-all duration-200 ${isSelected
+                    ? 'border-primary/50 shadow-md'
+                    : 'border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md'
+                    }`}
             >
-                {/* Product Image */}
-                <Link href={`/products/${productSlug}`} className="flex-shrink-0">
-                    <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100">
-                        <Image
-                            src={productImage}
-                            alt={productName}
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
-                </Link>
+                <div className="p-4">
+                    <div className="flex gap-4">
+                        {/* Selection Checkbox */}
+                        {onToggleSelect && (
+                            <div className="flex items-start pt-2">
+                                <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={onToggleSelect}
+                                    className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                />
+                            </div>
+                        )}
 
-                {/* Product Info */}
-                <div className="flex-1 min-w-0">
-                    <Link href={`/products/${productSlug}`} className="block">
-                        <h3 className="font-medium text-gray-900 hover:text-primary transition-colors line-clamp-2">
-                            {productName}
-                        </h3>
-                    </Link>
+                        {/* Product Image */}
+                        <Link href={`/products/${productSlug}`} className="flex-shrink-0 group">
+                            <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                                <Image
+                                    src={productImage}
+                                    alt={productName}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                />
+                            </div>
+                        </Link>
 
-                    {item.attributesName && (
-                        <p className="text-sm text-gray-600 mt-1">
-                            Phân loại: {item.attributesName}
-                        </p>
-                    )}
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0">
+                            <Link
+                                href={`/products/${productSlug}`}
+                                className="block group"
+                            >
+                                <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 mb-1">
+                                    {productName}
+                                </h3>
+                            </Link>
 
-                    <div className="flex items-center justify-between mt-3">
-                        <span className="text-lg font-semibold text-primary">
-                            {formatPrice(item.priceSnapshot || 0)}
-                        </span>
+                            {/* Variant Info */}
+                            {item.attributesName && (
+                                <p className="text-sm text-gray-600 mb-2">
+                                    {item.attributesName}
+                                </p>
+                            )}
 
-                        <div className="flex items-center gap-3">
-                            <QuantitySelector
-                                value={item.quantity}
-                                onChange={handleQuantityChange}
-                                min={1}
-                                max={99}
-                                disabled={isLoading}
-                                size="sm"
-                            />
+                            {/* Price & Quantity */}
+                            <div className="flex flex-wrap items-center gap-4 mt-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-500">Đơn giá:</span>
+                                    <span className="font-semibold text-primary">
+                                        {formatPrice(item.priceSnapshot)}
+                                    </span>
+                                </div>
 
+                                <div className="flex items-center gap-2">
+                                    <QuantitySelector
+                                        value={item.quantity}
+                                        onChange={handleQuantityChange}
+                                        disabled={isLoading}
+                                        min={1}
+                                        max={99}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Section: Total & Delete */}
+                        <div className="flex flex-col items-end justify-between">
+                            {/* Total Price */}
+                            <div className="text-right">
+                                <p className="text-xs text-gray-500 mb-1">Thành tiền</p>
+                                <p className="text-xl font-bold text-primary">
+                                    {formatPrice(itemTotal)}
+                                </p>
+                            </div>
+
+                            {/* Delete Button */}
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="sm"
                                 onClick={() => setShowDeleteDialog(true)}
                                 disabled={isLoading}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-gray-500 hover:text-red-600 hover:bg-red-50"
                             >
                                 {isLoading ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -123,13 +164,13 @@ export function CartItem({ item }: CartItemProps) {
                 </div>
             </motion.div>
 
-            {/* Delete Confirmation */}
+            {/* Delete Confirmation Dialog */}
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xóa sản phẩm</AlertDialogTitle>
+                        <AlertDialogTitle>Xóa sản phẩm khỏi giỏ hàng?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?
+                            Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng không?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

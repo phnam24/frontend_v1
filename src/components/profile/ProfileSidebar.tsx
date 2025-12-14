@@ -11,7 +11,6 @@ import { useState } from "react";
 
 const menuItems = [
     { icon: User, label: "Thông tin tài khoản", href: "/profile" },
-    { icon: Package, label: "Đơn hàng của tôi", href: "/profile/orders" },
     { icon: MapPin, label: "Địa chỉ", href: "/profile/addresses" },
     { icon: Lock, label: "Đổi mật khẩu", href: "/profile/change-password" },
     { icon: Heart, label: "Sản phẩm yêu thích", href: "/profile/wishlist" },

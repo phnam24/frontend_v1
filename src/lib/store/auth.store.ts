@@ -106,11 +106,18 @@ export const useAuthStore = create<AuthState>()(
                     // Clear tokens and state
                     localStorage.removeItem("access_token");
                     localStorage.removeItem("refresh_token");
+
+                    // Clear cart and wishlist data from localStorage
+                    localStorage.removeItem("cart-storage");
+                    localStorage.removeItem("wishlist-storage");
+
                     set({
                         user: null,
                         isAuthenticated: false
                     });
-                    toast.success("Đăng xuất thành công");
+
+                    // Force reload to clear all stores from memory
+                    window.location.href = "/";
                 }
             },
 

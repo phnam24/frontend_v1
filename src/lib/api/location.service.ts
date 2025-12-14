@@ -1,46 +1,46 @@
 import axios from "axios";
-import type { Province, District, Ward, LocationResponse, LocationParams } from "@/types/address";
+import type {
+    GHNProvinceResponse,
+    GHNDistrictResponse,
+    GHNWardResponse,
+} from "@/types/address";
 
-const LOCATION_API_BASE = "https://tinhthanhpho.com/api/v1";
+const GHN_API_URL = "https://online-gateway.ghn.vn/shiip/public-api/master-data";
+const GHN_TOKEN = process.env.NEXT_PUBLIC_GHN_TOKEN || ""; // Add to .env
 
-// Create separate axios instance for location API (no auth needed)
-const locationClient = axios.create({
-    baseURL: LOCATION_API_BASE,
-    timeout: 10000,
+// Create GHN client
+const ghnClient = axios.create({
+    baseURL: GHN_API_URL,
+    headers: {
+        "Content-Type": "application/json",
+        "Token": GHN_TOKEN,
+    },
 });
 
 /**
- * Get all provinces in Vietnam
+ * Get all provinces from GHN
  */
-export async function getProvinces(params?: LocationParams): Promise<LocationResponse<Province>> {
-    const response = await locationClient.get<LocationResponse<Province>>("/provinces", { params });
-    return response.data;
-}
+export const getProvinces = async () => {
+    const response = await ghnClient.get<GHNProvinceResponse>("/province");
+    return response.data.data;
+};
 
 /**
- * Get districts by province code
+ * Get districts by province ID
  */
-export async function getDistrictsByProvince(
-    provinceCode: string,
-    params?: LocationParams
-): Promise<LocationResponse<District>> {
-    const response = await locationClient.get<LocationResponse<District>>(
-        `/provinces/${provinceCode}/districts`,
-        { params }
-    );
-    return response.data;
-}
+export const getDistricts = async (provinceId: number) => {
+    const response = await ghnClient.get<GHNDistrictResponse>("/district", {
+        params: { province_id: provinceId },
+    });
+    return response.data.data;
+};
 
 /**
- * Get wards by district code
+ * Get wards by district ID
  */
-export async function getWardsByDistrict(
-    districtCode: string,
-    params?: LocationParams
-): Promise<LocationResponse<Ward>> {
-    const response = await locationClient.get<LocationResponse<Ward>>(
-        `/districts/${districtCode}/wards`,
-        { params }
-    );
-    return response.data;
-}
+export const getWards = async (districtId: number) => {
+    const response = await ghnClient.get<GHNWardResponse>("/ward", {
+        params: { district_id: districtId },
+    });
+    return response.data.data;
+};
