@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAddressStore } from "@/lib/store/address.store";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { MapPin, Plus, Check, Home, Phone, User, MapPinned } from "lucide-react";
+import { MapPin, Plus, Check, Home, Phone, User, MapPinned, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Address } from "@/types/address";
@@ -19,6 +20,7 @@ interface AddressStepProps {
 }
 
 export function AddressStep({ selectedAddressId, onSelectAddress }: AddressStepProps) {
+    const router = useRouter();
     const { addresses, fetchAddresses, isLoading } = useAddressStore();
     const [showAddForm, setShowAddForm] = useState(false);
 

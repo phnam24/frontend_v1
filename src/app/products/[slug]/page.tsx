@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { getProductById, getAllProducts } from "@/lib/api/product.service";
+import { getReviewsByProductId, calculateReviewStats } from "@/lib/api/review.service";
 import { extractIdFromSlug } from "@/lib/utils/slug";
 import { Header } from "@/components/layout/Header";
 import { ChevronRight, ShoppingCart, Heart, Share2, Check, Star, Package, Shield, Truck } from "lucide-react";
@@ -21,6 +22,9 @@ import { CartToast } from "@/components/ui/CartToast";
 import { ExpandableDescription } from "@/components/ui/ExpandableDescription";
 import { RelatedProducts } from "@/components/products/RelatedProducts";
 import { LoginDialog } from "@/components/ui/LoginDialog";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { ReviewsList } from "@/components/reviews/ReviewsList";
+import { ReviewStats } from "@/components/reviews/ReviewStats";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -49,9 +53,19 @@ export default function ProductDetailPage() {
 
     // Fetch all products for related products section
     const { data: productsData } = useQuery({
-        queryKey: ["products-for-related"],
+        queryKey: ["products"],
         queryFn: () => getAllProducts({ page: 1, limit: 20 }),
     });
+
+    // Fetch reviews for this product
+    const { data: reviewsData, isLoading: reviewsLoading, refetch: refetchReviews } = useQuery({
+        queryKey: ["reviews", productId],
+        queryFn: () => getReviewsByProductId(productId as number, 1, 20),
+        enabled: !!productId && !isNaN(productId),
+    });
+
+    const reviews = reviewsData?.result || [];
+    const reviewStats = calculateReviewStats(reviews);
 
     if (isLoading) {
         return (
@@ -187,7 +201,7 @@ export default function ProductDetailPage() {
     const tabs = [
         { id: "description", label: "Mô tả sản phẩm" },
         { id: "specs", label: "Thông số chi tiết" },
-        { id: "reviews", label: "Đánh giá (128)" },
+        { id: "reviews", label: "Đánh giá" },
     ];
 
     return (
@@ -545,11 +559,29 @@ export default function ProductDetailPage() {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
-                                    className="text-center py-12 text-gray-500"
+                                    className="space-y-6"
                                 >
-                                    <Star className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                                    <p>Chưa có đánh giá nào</p>
-                                    <Button className="mt-4">Viết đánh giá đầu tiên</Button>
+                                    {/* Review Stats */}
+                                    <ReviewStats stats={reviewStats} />
+
+                                    {/* Review Form */}
+                                    <ReviewForm
+                                        productId={product.id}
+                                        hasPurchased={true} // TODO: Check if user purchased
+                                        onSuccess={() => refetchReviews()}
+                                    />
+
+                                    {/* Reviews List */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                                            Tất cả đánh giá ({reviewStats.totalReviews})
+                                        </h3>
+                                        <ReviewsList
+                                            reviews={reviews}
+                                            isLoading={reviewsLoading}
+                                            hasMore={false}
+                                        />
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>

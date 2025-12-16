@@ -10,13 +10,13 @@ import { AddressStep } from "@/components/checkout/AddressStep";
 import { PaymentStep } from "@/components/checkout/PaymentStep";
 import { ReviewStep } from "@/components/checkout/ReviewStep";
 import { Button } from "@/components/ui/button";
-import { MapPin, CreditCard, CheckCircle2, ArrowLeft, ArrowRight, Loader2, ShoppingBag } from "lucide-react";
+import { MapPin, CreditCard, CheckCircle2, ArrowLeft, ArrowRight, Loader2, ShoppingBag, X } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart.store";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useOrderStore } from "@/lib/store/order.store";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/types/order";
-import { createPaymentUrl } from "@/lib/api/order.service";
+import { createPaymentUrl } from "@/lib/api/payment.service";
 
 const steps = [
     { label: "Địa chỉ giao hàng", icon: <MapPin className="h-5 w-5" /> },
@@ -122,23 +122,24 @@ export default function CheckoutPage() {
 
             const order = await createOrder(orderData);
 
+            // Clear cart immediately after order is created
+            // This happens for both COD and VNPay
+            await removeSelectedItems();
+
             if (selectedPaymentMethod === "COD") {
-                await removeSelectedItems();
                 toast.success("Đặt hàng thành công!");
                 router.push(`/orders/${order.id}/success`);
             } else {
+                // VNPay payment
                 const paymentRequest = {
                     orderId: order.id.toString(),
-                    paymentMethod: selectedPaymentMethod,
                     amount: order.total,
                 };
                 const paymentResponse = await createPaymentUrl(paymentRequest);
                 if (paymentResponse && paymentResponse.paymentUrl) {
-                    // Open VNPay payment in new tab
-                    window.open(paymentResponse.paymentUrl, '_blank');
-                    await removeSelectedItems();
-                    toast.success("Đã chuyển đến trang thanh toán VNPay");
-                    router.push(`/orders/${order.id}/success`);
+                    // Redirect to VNPay in current tab
+                    // After payment, VNPay will redirect to /payment/vnpay-return
+                    window.location.href = paymentResponse.paymentUrl;
                 } else {
                     throw new Error("Không thể tạo link thanh toán");
                 }
@@ -222,7 +223,16 @@ export default function CheckoutPage() {
 
                         {/* Navigation Buttons */}
                         <div className="mt-6 flex gap-4">
-                            {currentStep > 1 && (
+                            {currentStep === 1 ? (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => router.push("/products")}
+                                    className="gap-2 border-2 hover:border-red-500 hover:bg-red-50 hover:text-red-600"
+                                >
+                                    <X className="h-4 w-4" />
+                                    Hủy
+                                </Button>
+                            ) : currentStep > 1 && (
                                 <Button
                                     variant="outline"
                                     onClick={handleBack}

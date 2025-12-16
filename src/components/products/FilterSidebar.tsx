@@ -25,20 +25,10 @@ import { Filter } from "lucide-react";
 
 export function FilterSidebar() {
     const {
-        brands,
+        selectedBrand,
         priceRange,
-        cpu,
-        ram,
-        storage,
-        screenSize,
-        gpu,
-        toggleBrand,
+        setSelectedBrand,
         setPriceRange,
-        toggleCpu,
-        toggleRam,
-        toggleStorage,
-        toggleScreenSize,
-        toggleGpu,
         clearFilters,
         hasActiveFilters,
         getActiveFilterCount,
@@ -163,220 +153,95 @@ export function FilterSidebar() {
                     </AccordionContent>
                 </AccordionItem>
 
-                {/* Brand Filter */}
+                {/* Brand Filter - Single Select */}
                 <AccordionItem value="brand" className="border-none">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                    <AccordionTrigger className="text-xs font-semibold hover:no-underline py-2">
                         <span className="flex items-center gap-2">
                             🏷️ Thương hiệu
                         </span>
                     </AccordionTrigger>
                     <AccordionContent>
                         <div className="space-y-2 max-h-64 overflow-y-auto pt-2 pr-2">
+                            {/* All Brands Option */}
+                            <motion.button
+                                whileHover={{ x: 4 }}
+                                onClick={() => setSelectedBrand(null)}
+                                className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${selectedBrand === null
+                                    ? "bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md"
+                                    : "hover:bg-gray-50 border border-transparent hover:border-gray-200"
+                                    }`}
+                            >
+                                Tất cả thương hiệu
+                            </motion.button>
+
                             {brandsData?.result.map((brand, index) => (
-                                <motion.div
+                                <motion.button
                                     key={brand.id}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.03 }}
                                     whileHover={{ x: 4 }}
-                                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                                    onClick={() => setSelectedBrand(brand.id)}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${selectedBrand === brand.id
+                                        ? "bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md"
+                                        : "hover:bg-gray-50 border border-transparent hover:border-gray-200"
+                                        }`}
                                 >
-                                    <Checkbox
-                                        id={`brand-${brand.id}`}
-                                        checked={brands.includes(brand.id)}
-                                        onCheckedChange={() => toggleBrand(brand.id)}
-                                        className="data-[state=checked]:bg-primary-600 data-[state=checked]:border-primary-600"
-                                    />
-                                    <label
-                                        htmlFor={`brand-${brand.id}`}
-                                        className="text-xs cursor-pointer flex-1 font-medium"
-                                    >
-                                        {brand.name}
-                                    </label>
-                                </motion.div>
+                                    {brand.name}
+                                </motion.button>
                             ))}
                         </div>
                     </AccordionContent>
                 </AccordionItem>
 
-                {/* CPU Filter */}
-                <AccordionItem value="cpu" className="border-none">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                {/* CPU Filter - Disabled */}
+                <AccordionItem value="cpu" className="border-none opacity-50">
+                    <AccordionTrigger className="text-xs font-semibold hover:no-underline py-2 cursor-not-allowed">
                         <span className="flex items-center gap-2">
                             🖥️ Bộ xử lý (CPU)
+                            <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Sắp có</span>
                         </span>
                     </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pt-2 pr-2">
-                            {CPU_OPTIONS.map((cpuOption, index) => (
-                                <motion.div
-                                    key={cpuOption}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.03 }}
-                                    whileHover={{ x: 4 }}
-                                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <Checkbox
-                                        id={`cpu-${cpuOption}`}
-                                        checked={cpu.includes(cpuOption)}
-                                        onCheckedChange={() => toggleCpu(cpuOption)}
-                                        className="data-[state=checked]:bg-primary-600 data-[state=checked]:border-primary-600"
-                                    />
-                                    <label
-                                        htmlFor={`cpu-${cpuOption}`}
-                                        className="text-sm cursor-pointer flex-1"
-                                    >
-                                        {cpuOption}
-                                    </label>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </AccordionContent>
                 </AccordionItem>
 
-                {/* RAM Filter */}
-                <AccordionItem value="ram" className="border-none">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                {/* RAM Filter - Disabled */}
+                <AccordionItem value="ram" className="border-none opacity-50">
+                    <AccordionTrigger className="text-xs font-semibold hover:no-underline py-2 cursor-not-allowed">
                         <span className="flex items-center gap-2">
                             💾 RAM
+                            <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Sắp có</span>
                         </span>
                     </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="space-y-2 pt-2">
-                            {RAM_OPTIONS.map((ramOption, index) => (
-                                <motion.div
-                                    key={ramOption}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    whileHover={{ x: 4 }}
-                                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <Checkbox
-                                        id={`ram-${ramOption}`}
-                                        checked={ram.includes(ramOption)}
-                                        onCheckedChange={() => toggleRam(ramOption)}
-                                        className="data-[state=checked]:bg-primary-600 data-[state=checked]:border-primary-600"
-                                    />
-                                    <label
-                                        htmlFor={`ram-${ramOption}`}
-                                        className="text-sm cursor-pointer flex-1"
-                                    >
-                                        {ramOption}
-                                    </label>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </AccordionContent>
                 </AccordionItem>
 
-                {/* Storage Filter */}
-                <AccordionItem value="storage" className="border-none">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                {/* Storage Filter - Disabled */}
+                <AccordionItem value="storage" className="border-none opacity-50">
+                    <AccordionTrigger className="text-xs font-semibold hover:no-underline py-2 cursor-not-allowed">
                         <span className="flex items-center gap-2">
                             💿 Ổ cứng
+                            <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Sắp có</span>
                         </span>
                     </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="space-y-2 pt-2">
-                            {STORAGE_OPTIONS.map((storageOption, index) => (
-                                <motion.div
-                                    key={storageOption}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    whileHover={{ x: 4 }}
-                                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <Checkbox
-                                        id={`storage-${storageOption}`}
-                                        checked={storage.includes(storageOption)}
-                                        onCheckedChange={() => toggleStorage(storageOption)}
-                                        className="data-[state=checked]:bg-primary-600 data-[state=checked]:border-primary-600"
-                                    />
-                                    <label
-                                        htmlFor={`storage-${storageOption}`}
-                                        className="text-sm cursor-pointer flex-1"
-                                    >
-                                        {storageOption}
-                                    </label>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </AccordionContent>
                 </AccordionItem>
 
-                {/* Screen Size Filter */}
-                <AccordionItem value="screen" className="border-none">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                {/* Screen Size Filter - Disabled */}
+                <AccordionItem value="screen" className="border-none opacity-50">
+                    <AccordionTrigger className="text-xs font-semibold hover:no-underline py-2 cursor-not-allowed">
                         <span className="flex items-center gap-2">
-                            📺 Kích thước màn hình
+                            📐 Kích thước màn hình
+                            <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Sắp có</span>
                         </span>
                     </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="space-y-2 pt-2">
-                            {SCREEN_SIZE_OPTIONS.map((size, index) => (
-                                <motion.div
-                                    key={size}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    whileHover={{ x: 4 }}
-                                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <Checkbox
-                                        id={`screen-${size}`}
-                                        checked={screenSize.includes(size)}
-                                        onCheckedChange={() => toggleScreenSize(size)}
-                                        className="data-[state=checked]:bg-primary-600 data-[state=checked]:border-primary-600"
-                                    />
-                                    <label
-                                        htmlFor={`screen-${size}`}
-                                        className="text-sm cursor-pointer flex-1"
-                                    >
-                                        {size}
-                                    </label>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </AccordionContent>
                 </AccordionItem>
 
-                {/* GPU Filter */}
-                <AccordionItem value="gpu" className="border-none">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                {/* GPU Filter - Disabled */}
+                <AccordionItem value="gpu" className="border-none opacity-50">
+                    <AccordionTrigger className="text-xs font-semibold hover:no-underline py-2 cursor-not-allowed">
                         <span className="flex items-center gap-2">
                             🎮 Card đồ họa (GPU)
+                            <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Sắp có</span>
                         </span>
                     </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pt-2 pr-2">
-                            {GPU_OPTIONS.map((gpuOption, index) => (
-                                <motion.div
-                                    key={gpuOption}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.03 }}
-                                    whileHover={{ x: 4 }}
-                                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <Checkbox
-                                        id={`gpu-${gpuOption}`}
-                                        checked={gpu.includes(gpuOption)}
-                                        onCheckedChange={() => toggleGpu(gpuOption)}
-                                        className="data-[state=checked]:bg-primary-600 data-[state=checked]:border-primary-600"
-                                    />
-                                    <label
-                                        htmlFor={`gpu-${gpuOption}`}
-                                        className="text-sm cursor-pointer flex-1"
-                                    >
-                                        {gpuOption}
-                                    </label>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </AccordionContent>
                 </AccordionItem>
             </Accordion>
         </motion.div>

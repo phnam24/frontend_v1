@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { OrderStatus } from "@/types/order";
+import { OrderStatusLabels, PaymentStatusLabels, PaymentMethodLabels } from "@/types/order";
 
 const statusConfig: Record<OrderStatus, {
     label: string;
@@ -40,31 +41,31 @@ const statusConfig: Record<OrderStatus, {
     icon: React.ReactNode;
 }> = {
     PENDING: {
-        label: "Chờ xác nhận",
+        label: OrderStatusLabels.PENDING,
         color: "text-yellow-800",
         bgColor: "bg-yellow-100",
         icon: <Clock className="h-4 w-4" />
     },
     PAID: {
-        label: "Đã thanh toán",
+        label: OrderStatusLabels.PAID,
         color: "text-blue-800",
         bgColor: "bg-blue-100",
         icon: <CheckCircle2 className="h-4 w-4" />
     },
     SHIPPING: {
-        label: "Đang giao",
+        label: OrderStatusLabels.SHIPPING,
         color: "text-purple-800",
         bgColor: "bg-purple-100",
         icon: <Truck className="h-4 w-4" />
     },
     COMPLETED: {
-        label: "Hoàn thành",
+        label: OrderStatusLabels.COMPLETED,
         color: "text-green-800",
         bgColor: "bg-green-100",
         icon: <CheckCircle2 className="h-4 w-4" />
     },
     CANCELLED: {
-        label: "Đã hủy",
+        label: OrderStatusLabels.CANCELLED,
         color: "text-red-800",
         bgColor: "bg-red-100",
         icon: <XCircle className="h-4 w-4" />
@@ -205,10 +206,10 @@ export default function OrderDetailPage() {
                             <h3 className="text-sm font-bold text-gray-900">Phương thức thanh toán</h3>
                         </div>
                         <p className="text-sm text-gray-700 pl-6">
-                            {getPaymentMethodName(currentOrder.paymentMethod)}
+                            {PaymentMethodLabels[currentOrder.paymentMethod]}
                         </p>
                         <p className="text-sm text-gray-600 pl-6 mt-1">
-                            Trạng thái: <span className="font-medium">{currentOrder.paymentStatus}</span>
+                            Trạng thái: <span className="font-medium">{PaymentStatusLabels[currentOrder.paymentStatus]}</span>
                         </p>
                     </div>
 

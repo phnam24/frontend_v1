@@ -1,9 +1,10 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Package, Calendar, CreditCard } from "lucide-react";
 import type { Order, OrderStatus } from "@/types/order";
+import { OrderStatusLabels } from "@/types/order";
 import Link from "next/link";
 
 interface OrderCardProps {
@@ -11,11 +12,11 @@ interface OrderCardProps {
 }
 
 const statusConfig: Record<OrderStatus, { label: string; color: string }> = {
-    PENDING: { label: "Chờ xác nhận", color: "bg-yellow-100 text-yellow-800" },
-    PAID: { label: "Đã thanh toán", color: "bg-blue-100 text-blue-800" },
-    SHIPPING: { label: "Đang giao", color: "bg-purple-100 text-purple-800" },
-    COMPLETED: { label: "Hoàn thành", color: "bg-green-100 text-green-800" },
-    CANCELLED: { label: "Đã hủy", color: "bg-red-100 text-red-800" },
+    PENDING: { label: OrderStatusLabels.PENDING, color: "bg-yellow-100 text-yellow-800" },
+    PAID: { label: OrderStatusLabels.PAID, color: "bg-blue-100 text-blue-800" },
+    SHIPPING: { label: OrderStatusLabels.SHIPPING, color: "bg-purple-100 text-purple-800" },
+    COMPLETED: { label: OrderStatusLabels.COMPLETED, color: "bg-green-100 text-green-800" },
+    CANCELLED: { label: OrderStatusLabels.CANCELLED, color: "bg-red-100 text-red-800" },
 };
 
 export function OrderCard({ order }: OrderCardProps) {
@@ -34,13 +35,13 @@ export function OrderCard({ order }: OrderCardProps) {
     const status = statusConfig[order.status] || statusConfig.PENDING;
 
     return (
-        <Link href={`/orders/${order.id}`}>
+        <Link href={`/ orders / ${order.id} `}>
             <Card className="p-3 hover:shadow-md transition-all hover:border-primary/30 cursor-pointer">
                 <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-bold text-gray-900">#{order.id}</span>
-                            <Badge className={`${status.color} text-xs px-2 py-0`}>{status.label}</Badge>
+                            <Badge className={`${status.color} text - xs px - 2 py - 0`}>{status.label}</Badge>
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                             <Calendar className="h-3 w-3" />

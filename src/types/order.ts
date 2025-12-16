@@ -48,6 +48,30 @@ export type PaymentMethod =
     | "VNPAY"
     | "MOMO";
 
+// Vietnamese Labels for Order Status
+export const OrderStatusLabels: Record<OrderStatus, string> = {
+    PENDING: "Đang xử lý",
+    PAID: "Đã thanh toán",
+    SHIPPING: "Đang giao hàng",
+    COMPLETED: "Hoàn thành",
+    CANCELLED: "Đã hủy"
+};
+
+// Vietnamese Labels for Payment Status
+export const PaymentStatusLabels: Record<PaymentStatus, string> = {
+    UNPAID: "Chưa thanh toán",
+    PAID: "Đã thanh toán",
+    REFUNDED: "Đã hoàn tiền",
+    FAILED: "Thanh toán thất bại"
+};
+
+// Vietnamese Labels for Payment Method
+export const PaymentMethodLabels: Record<PaymentMethod, string> = {
+    COD: "Thanh toán khi nhận hàng",
+    VNPAY: "VNPay",
+    MOMO: "MoMo"
+};
+
 export interface CreateOrderRequest {
     addressId: number;
     voucherCode?: string;

@@ -40,6 +40,34 @@ export async function searchProducts(params: {
     return response.data.result;
 }
 
+// Advanced Search with Filters
+export interface ProductSearchParams {
+    keyword?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    brandId?: number;
+    page?: number;
+    limit?: number;
+}
+
+export async function searchProductsAdvanced(
+    params: ProductSearchParams
+): Promise<PaginatedResponse<Product>> {
+    const queryParams = new URLSearchParams();
+
+    if (params.keyword) queryParams.append('keyword', params.keyword);
+    if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString());
+    if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString());
+    if (params.brandId) queryParams.append('brandId', params.brandId.toString());
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<Product>>>(
+        `/product/products/search/advanced?${queryParams.toString()}`
+    );
+    return response.data.result;
+}
+
 // Brands
 export async function getAllBrands(params?: {
     page?: number;

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as orderService from "@/lib/api/order.service";
+import { useAuthStore } from "@/lib/store/auth.store";
 import type { Order, CreateOrderRequest, OrderListResponse, OrderStatus } from "@/types/order";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ interface OrderState {
 
     // Actions
     fetchOrders: (params?: { page?: number; limit?: number }) => Promise<void>;
+    fetchOrdersByStatus: (status: OrderStatus, params?: { page?: number; limit?: number }) => Promise<void>;
     fetchOrderById: (id: number) => Promise<void>;
     createOrder: (data: CreateOrderRequest) => Promise<Order>;
     cancelOrder: (id: number) => Promise<void>;
@@ -60,6 +62,33 @@ export const useOrderStore = create<OrderState>()((set) => ({
         } catch (error: any) {
             set({ isLoading: false });
             console.error("Fetch orders error:", error);
+            toast.error(error.response?.data?.message || "Không thể tải danh sách đơn hàng");
+        }
+    },
+
+    fetchOrdersByStatus: async (status, params) => {
+        try {
+            set({ isLoading: true });
+            // Get current user ID from auth store
+            const { user } = useAuthStore.getState();
+            if (!user?.id) {
+                throw new Error("User not authenticated");
+            }
+
+            const data = await orderService.getOrdersByUserIdAndStatus(user.username, status, params);
+            set({
+                orders: data.result,
+                pagination: {
+                    total: data.total,
+                    page: data.page,
+                    size: data.size,
+                    totalPages: data.totalPages,
+                },
+                isLoading: false,
+            });
+        } catch (error: any) {
+            set({ isLoading: false });
+            console.error("Fetch orders by status error:", error);
             toast.error(error.response?.data?.message || "Không thể tải danh sách đơn hàng");
         }
     },

@@ -1,10 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, Calendar, CreditCard, CheckCircle2, Clock, Truck, XCircle, ChevronRight } from "lucide-react";
+import { Package, Calendar, CreditCard, CheckCircle2, Clock, Truck, XCircle, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { Order } from "@/types/order";
+import { OrderStatusLabels } from "@/types/order";
+import type { CreatePaymentRequest } from "@/types/payment";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { createPaymentUrl } from "@/lib/api/payment.service";
+import { toast } from "sonner";
 
 interface OrderTimelineProps {
     orders: Order[];
@@ -12,7 +19,7 @@ interface OrderTimelineProps {
 
 const statusConfig = {
     PENDING: {
-        label: "Đang xử lý",
+        label: OrderStatusLabels.PENDING,
         color: "text-yellow-700",
         bgColor: "bg-yellow-50",
         borderColor: "border-yellow-300",
@@ -21,7 +28,7 @@ const statusConfig = {
         icon: Clock,
     },
     PAID: {
-        label: "Đã thanh toán",
+        label: OrderStatusLabels.PAID,
         color: "text-blue-700",
         bgColor: "bg-blue-50",
         borderColor: "border-blue-300",
@@ -30,7 +37,7 @@ const statusConfig = {
         icon: CheckCircle2,
     },
     SHIPPING: {
-        label: "Đang giao",
+        label: OrderStatusLabels.SHIPPING,
         color: "text-purple-700",
         bgColor: "bg-purple-50",
         borderColor: "border-purple-300",
@@ -39,7 +46,7 @@ const statusConfig = {
         icon: Truck,
     },
     COMPLETED: {
-        label: "Hoàn thành",
+        label: OrderStatusLabels.COMPLETED,
         color: "text-green-700",
         bgColor: "bg-green-50",
         borderColor: "border-green-300",
@@ -48,7 +55,7 @@ const statusConfig = {
         icon: CheckCircle2,
     },
     CANCELLED: {
-        label: "Đã hủy",
+        label: OrderStatusLabels.CANCELLED,
         color: "text-red-700",
         bgColor: "bg-red-50",
         borderColor: "border-red-300",
@@ -59,6 +66,10 @@ const statusConfig = {
 };
 
 export function OrderTimeline({ orders }: OrderTimelineProps) {
+    const [retryingPayment, setRetryingPayment] = useState<number | null>(null);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat("vi-VN").format(price) + " đ";
     };
@@ -71,6 +82,39 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
             hour: "2-digit",
             minute: "2-digit",
         });
+    };
+
+    const handleRetryPaymentClick = (e: React.MouseEvent, order: Order) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedOrder(order);
+        setConfirmDialogOpen(true);
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!selectedOrder) return;
+
+        try {
+            setRetryingPayment(selectedOrder.id);
+            setConfirmDialogOpen(false);
+
+            const paymentRequest: CreatePaymentRequest = {
+                orderId: selectedOrder.id.toString(),
+                amount: selectedOrder.total,
+            };
+
+            const response = await createPaymentUrl(paymentRequest);
+
+            if (response && response.paymentUrl) {
+                window.location.href = response.paymentUrl;
+            } else {
+                throw new Error("Không thể tạo link thanh toán");
+            }
+        } catch (error: any) {
+            console.error("Retry payment error:", error);
+            toast.error(error.response?.data?.message || "Không thể tạo link thanh toán. Vui lòng thử lại.");
+            setRetryingPayment(null);
+        }
     };
 
     if (orders.length === 0) {
@@ -178,11 +222,33 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                                                     <span className="font-medium">{order.paymentMethod}</span>
                                                 </span>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-xs text-gray-500 mb-0.5">Tổng tiền</p>
-                                                <p className="text-lg font-bold text-primary">
-                                                    {formatPrice(order.total)}
-                                                </p>
+                                            <div className="flex items-center gap-2">
+                                                {order.paymentMethod === "VNPAY" && order.status === "PENDING" && (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={(e) => handleRetryPaymentClick(e, order)}
+                                                        disabled={retryingPayment === order.id}
+                                                        className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white h-8 px-3 text-xs"
+                                                    >
+                                                        {retryingPayment === order.id ? (
+                                                            <>
+                                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                                Đang xử lý...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <CreditCard className="h-3 w-3" />
+                                                                Hoàn tất thanh toán
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                )}
+                                                <div className="text-right">
+                                                    <p className="text-xs text-gray-500 mb-0.5">Tổng tiền</p>
+                                                    <p className="text-lg font-bold text-primary">
+                                                        {formatPrice(order.total)}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -192,6 +258,36 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                     </Link>
                 );
             })}
+
+            {/* Payment Confirmation Dialog */}
+            <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận thanh toán</AlertDialogTitle>
+                        <div className="text-sm text-muted-foreground">
+                            {selectedOrder && (
+                                <div className="space-y-2 mt-2">
+                                    <p>Bạn có chắc chắn muốn thanh toán cho đơn hàng này?</p>
+                                    <div className="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
+                                        <div><span className="font-medium">Mã đơn hàng:</span> #{selectedOrder.id}</div>
+                                        <div><span className="font-medium">Số tiền:</span> {formatPrice(selectedOrder.total)}</div>
+                                        <div><span className="font-medium">Phương thức:</span> VNPay</div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Bạn sẽ được chuyển đến trang thanh toán VNPay để hoàn tất giao dịch.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmPayment} className="bg-blue-600 hover:bg-blue-700">
+                            Xác nhận thanh toán
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { getAllProducts, getAllBrands, searchProducts } from "@/lib/api/product.service";
+import { getAllProducts, getAllBrands, searchProducts, searchProductsAdvanced } from "@/lib/api/product.service";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductGridSkeleton } from "@/components/products/ProductCardSkeleton";
 import { Pagination } from "@/components/ui/Pagination";
@@ -23,7 +23,7 @@ export default function ProductsPage() {
     const limit = parseInt(searchParams.get("limit") || "25");
     const search = searchParams.get("search") || "";
 
-    const { sortBy, priceRange, brands, cpu, ram, storage, screenSize, gpu } = useFilterStore();
+    const { sortBy, priceRange, selectedBrand } = useFilterStore();
 
     // Fetch all brands for mapping
     const { data: brandsData } = useQuery({
@@ -37,19 +37,21 @@ export default function ProductsPage() {
         return new Map(brandsData.result.map(b => [b.id, b]));
     }, [brandsData]);
 
+    // Use advanced search API with server-side filtering
     const { data, isLoading, error } = useQuery({
-        queryKey: ["products", page, limit, search],
-        queryFn: () => {
-            // Use dedicated search endpoint when search query exists
-            if (search.trim()) {
-                return searchProducts({ name: search, page, limit });
-            }
-            return getAllProducts({ page, limit });
-        },
+        queryKey: ["products", "advanced", page, limit, search, priceRange, selectedBrand],
+        queryFn: () => searchProductsAdvanced({
+            keyword: search || undefined,
+            minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+            maxPrice: priceRange.max < 999999999 ? priceRange.max : undefined,
+            brandId: selectedBrand || undefined,
+            page,
+            limit
+        }),
     });
 
-    // Client-side filtering and sorting
-    const filteredAndSortedProducts = useMemo(() => {
+    // Server-side filtering done by API, only need client-side sorting
+    const sortedProducts = useMemo(() => {
         if (!data?.result) return [];
 
         // Populate products with brand data
@@ -58,24 +60,7 @@ export default function ProductsPage() {
             brand: brandMap.get(p.brandId),
         }));
 
-        // Note: Search filtering is done server-side
-        // Client-side filters below are for additional filtering
-
-        // Apply filters
-        // Price filter
-        products = products.filter(
-            (p) => p.priceSale >= priceRange.min && p.priceSale <= priceRange.max
-        );
-
-        // Brand filter
-        if (brands.length > 0) {
-            products = products.filter((p) => brands.includes(p.brandId));
-        }
-
-        // Note: CPU, RAM, Storage, Screen, GPU filters would need variant data
-        // For now, we'll skip these as they require additional API calls
-
-        // Apply sorting
+        // Apply sorting (API doesn't support sorting yet)
         switch (sortBy) {
             case "price-asc":
                 products.sort((a, b) => a.priceSale - b.priceSale);
@@ -97,7 +82,7 @@ export default function ProductsPage() {
         }
 
         return products;
-    }, [data, brandMap, search, priceRange, brands, sortBy]);
+    }, [data, brandMap, sortBy]);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -158,7 +143,7 @@ export default function ProductsPage() {
                             </div>
                         ) : data ? (
                             <>
-                                <ProductGrid products={filteredAndSortedProducts} />
+                                <ProductGrid products={sortedProducts} />
 
                                 {/* Pagination */}
                                 <Pagination

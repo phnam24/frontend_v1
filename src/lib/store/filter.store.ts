@@ -4,10 +4,12 @@ import type { FilterState, SortOption } from "@/types/filters";
 
 interface FilterStore extends FilterState {
     sortBy: SortOption;
+    selectedBrand: number | null; // Single brand selection for advanced search
 
     // Actions
     setCategories: (categories: number[]) => void;
-    setBrands: (brands: number[]) => void;
+    setBrands: (brands: number[]) => void; // Keep for backward compatibility
+    setSelectedBrand: (brandId: number | null) => void; // New: single brand
     setPriceRange: (min: number, max: number) => void;
     setCpu: (cpu: string[]) => void;
     setRam: (ram: string[]) => void;
@@ -50,9 +52,11 @@ export const useFilterStore = create<FilterStore>()(
         (set, get) => ({
             ...initialState,
             sortBy: "newest",
+            selectedBrand: null,
 
             setCategories: (categories) => set({ categories }),
             setBrands: (brands) => set({ brands }),
+            setSelectedBrand: (brandId) => set({ selectedBrand: brandId }),
             setPriceRange: (min, max) => set({ priceRange: { min, max } }),
             setCpu: (cpu) => set({ cpu }),
             setRam: (ram) => set({ ram }),

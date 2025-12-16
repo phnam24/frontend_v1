@@ -15,31 +15,52 @@ import { Input } from "@/components/ui/input";
 export default function OrdersPage() {
     const router = useRouter();
     const { isAuthenticated } = useAuthStore();
-    const { orders, fetchOrders, isLoading, pagination, statusCounts, fetchStatusCounts } = useOrderStore();
+    const { orders, fetchOrders, fetchOrdersByStatus, isLoading, pagination, statusCounts, fetchStatusCounts } = useOrderStore();
     const [activeTab, setActiveTab] = useState<"all" | OrderStatus>("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         if (!isAuthenticated) {
             router.push("/login?redirect=/orders");
             return;
         }
-        fetchOrders();
+        // Only fetch status counts on mount
+        // Orders will be fetched by the second useEffect
         fetchStatusCounts();
-    }, [isAuthenticated, fetchOrders, fetchStatusCounts, router]);
+    }, [isAuthenticated, fetchStatusCounts, router]);
 
+    // Fetch orders when tab changes
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        if (activeTab === "all") {
+            fetchOrders({ page: currentPage, limit: 12 });
+        } else {
+            fetchOrdersByStatus(activeTab, { page: currentPage, limit: 12 });
+        }
+    }, [activeTab, currentPage, isAuthenticated, fetchOrders, fetchOrdersByStatus]);
+
+    // Reset to page 1 when tab changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab]);
+
+    // Client-side search filtering (only for search, not for tabs)
     const filteredOrders = orders.filter(order => {
-        const matchesTab = activeTab === "all" || order.status === activeTab;
-        const matchesSearch = searchQuery === "" ||
-            order.id.toString().includes(searchQuery) ||
+        if (searchQuery === "") return true;
+        return order.id.toString().includes(searchQuery) ||
             order.items.some(item => item.productName?.toLowerCase().includes(searchQuery.toLowerCase()));
-        return matchesTab && matchesSearch;
     });
 
     const getOrderCount = (status: "all" | OrderStatus) => {
         // Use status counts from API for accurate totals
-        if (status === "all") return pagination?.total || 0;
+        if (status === "all") return statusCounts.PENDING + statusCounts.PAID + statusCounts.SHIPPING + statusCounts.COMPLETED + statusCounts.CANCELLED;
         return statusCounts[status] || 0;
+    };
+
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
     };
 
     if (!isAuthenticated) {
@@ -83,7 +104,7 @@ export default function OrdersPage() {
                                     </div>
                                     <div>
                                         <p className="text-sm text-white/80">Tổng đơn</p>
-                                        <p className="text-2xl font-bold text-white">{pagination?.total || 0}</p>
+                                        <p className="text-2xl font-bold text-white">{getOrderCount("all")}</p>
                                     </div>
                                 </div>
                             </motion.div>
@@ -295,7 +316,7 @@ export default function OrdersPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => fetchOrders({ page: pagination.page - 1 })}
+                                    onClick={() => handlePageChange(pagination.page - 1)}
                                     disabled={pagination.page === 1}
                                     className="gap-2"
                                 >
@@ -319,7 +340,7 @@ export default function OrdersPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => fetchOrders({ page: pagination.page + 1 })}
+                                    onClick={() => handlePageChange(pagination.page + 1)}
                                     disabled={pagination.page === pagination.totalPages}
                                     className="gap-2"
                                 >
