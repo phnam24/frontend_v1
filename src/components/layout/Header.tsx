@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ShoppingBag, ShoppingCart, User, LogOut } from "lucide-react";
+import { ShoppingBag, ShoppingCart, User, LogOut, Ticket, MapPin, KeyRound } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useCartStore } from "@/lib/store/cart.store";
@@ -110,6 +110,12 @@ export function Header() {
                                         <Link href="/orders" className="cursor-pointer">
                                             <ShoppingBag className="h-4 w-4 mr-2" />
                                             Đơn hàng của tôi
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/vouchers" className="cursor-pointer">
+                                            <Ticket className="h-4 w-4 mr-2" />
+                                            Mã giảm giá
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />

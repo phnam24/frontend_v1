@@ -16,15 +16,17 @@ import { Button } from "@/components/ui/button";
 export default function CartPage() {
     const router = useRouter();
     const { cart, fetchCart, isLoading, selectedItemIds, toggleItemSelection, selectAllItems, clearSelection } = useCartStore();
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, hasHydrated } = useAuthStore();
 
     useEffect(() => {
+        if (!hasHydrated) return;
+
         if (!isAuthenticated) {
             router.push("/login?redirect=/cart");
             return;
         }
         fetchCart();
-    }, [isAuthenticated, fetchCart, router]);
+    }, [isAuthenticated, hasHydrated, fetchCart, router]);
 
     const items = cart?.items || [];
     const totalItems = cart?.totalItems || 0;

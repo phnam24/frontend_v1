@@ -8,6 +8,7 @@ interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    hasHydrated: boolean; // Track if store has been hydrated from localStorage
 
     // Actions
     login: (credentials: LoginRequest) => Promise<void>;
@@ -15,6 +16,7 @@ interface AuthState {
     logout: () => Promise<void>;
     loadUser: () => Promise<void>;
     updateUser: (data: Partial<User>) => void;
+    setHasHydrated: (state: boolean) => void;
 }
 
 // Helper function to convert role strings to Role objects
@@ -42,6 +44,11 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: false,
             isLoading: false,
+            hasHydrated: false,
+
+            setHasHydrated: (state: boolean) => {
+                set({ hasHydrated: state });
+            },
 
             login: async (credentials: LoginRequest) => {
                 try {
@@ -139,12 +146,15 @@ export const useAuthStore = create<AuthState>()(
                         const profileService = await import("@/lib/api/profile.service");
                         const profileData = await profileService.getProfileByUserId(identityData.id);
 
-                        // Merge identity and profile data
+                        // Merge identity and profile data, preserving rank and totalSpent from identity
                         const mergedUser: User = {
                             ...identityData,
                             firstName: profileData.firstName,
                             lastName: profileData.lastName,
                             dob: profileData.dob,
+                            // Ensure rank and totalSpent from identity are preserved
+                            rank: identityData.rank,
+                            totalSpent: identityData.totalSpent,
                             // Add email and phone from profile if available
                             ...(profileData.email && { email: profileData.email }),
                             ...(profileData.phone && { phone: profileData.phone }),
@@ -191,6 +201,10 @@ export const useAuthStore = create<AuthState>()(
                 user: state.user,
                 isAuthenticated: state.isAuthenticated
             }),
+            onRehydrateStorage: () => (state) => {
+                // Called when store is rehydrated from localStorage
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

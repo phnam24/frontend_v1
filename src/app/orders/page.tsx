@@ -14,13 +14,15 @@ import { Input } from "@/components/ui/input";
 
 export default function OrdersPage() {
     const router = useRouter();
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, hasHydrated } = useAuthStore();
     const { orders, fetchOrders, fetchOrdersByStatus, isLoading, pagination, statusCounts, fetchStatusCounts } = useOrderStore();
     const [activeTab, setActiveTab] = useState<"all" | OrderStatus>("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
+        if (!hasHydrated) return;
+
         if (!isAuthenticated) {
             router.push("/login?redirect=/orders");
             return;
@@ -28,18 +30,18 @@ export default function OrdersPage() {
         // Only fetch status counts on mount
         // Orders will be fetched by the second useEffect
         fetchStatusCounts();
-    }, [isAuthenticated, fetchStatusCounts, router]);
+    }, [isAuthenticated, hasHydrated, fetchStatusCounts, router]);
 
     // Fetch orders when tab changes
     useEffect(() => {
-        if (!isAuthenticated) return;
+        if (!hasHydrated || !isAuthenticated) return;
 
         if (activeTab === "all") {
             fetchOrders({ page: currentPage, limit: 12 });
         } else {
             fetchOrdersByStatus(activeTab, { page: currentPage, limit: 12 });
         }
-    }, [activeTab, currentPage, isAuthenticated, fetchOrders, fetchOrdersByStatus]);
+    }, [activeTab, currentPage, isAuthenticated, hasHydrated, fetchOrders, fetchOrdersByStatus]);
 
     // Reset to page 1 when tab changes
     useEffect(() => {
@@ -63,8 +65,12 @@ export default function OrdersPage() {
         setCurrentPage(newPage);
     };
 
-    if (!isAuthenticated) {
-        return null;
+    if (!hasHydrated || !isAuthenticated) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
     }
 
     return (

@@ -9,6 +9,7 @@ import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { AddressStep } from "@/components/checkout/AddressStep";
 import { PaymentStep } from "@/components/checkout/PaymentStep";
 import { ReviewStep } from "@/components/checkout/ReviewStep";
+import { VoucherSelector } from "@/components/checkout/VoucherSelector";
 import { Button } from "@/components/ui/button";
 import { MapPin, CreditCard, CheckCircle2, ArrowLeft, ArrowRight, Loader2, ShoppingBag, X } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart.store";
@@ -16,6 +17,7 @@ import { useAuthStore } from "@/lib/store/auth.store";
 import { useOrderStore } from "@/lib/store/order.store";
 import { toast } from "sonner";
 import type { PaymentMethod } from "@/types/order";
+import type { Voucher } from "@/types/voucher";
 import { createPaymentUrl } from "@/lib/api/payment.service";
 
 const steps = [
@@ -26,7 +28,7 @@ const steps = [
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, hasHydrated } = useAuthStore();
     const { cart, removeSelectedItems, selectedItemIds } = useCartStore();
     const { createOrder } = useOrderStore();
 
@@ -39,8 +41,12 @@ export default function CheckoutPage() {
     const [orderNote, setOrderNote] = useState("");
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+    const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+    const [voucherDiscount, setVoucherDiscount] = useState(0);
 
     useEffect(() => {
+        if (!hasHydrated) return;
+
         if (!isAuthenticated) {
             router.push("/login?redirect=/checkout");
         } else if (!cart || cart.items.length === 0) {
@@ -49,10 +55,14 @@ export default function CheckoutPage() {
             toast.error("Vui lòng chọn ít nhất 1 sản phẩm để thanh toán");
             router.push("/cart");
         }
-    }, [isAuthenticated, cart, hasSelectedItems, router]);
+    }, [isAuthenticated, hasHydrated, cart, hasSelectedItems, router]);
 
-    if (!isAuthenticated || !cart || cart.items.length === 0) {
-        return null;
+    if (!hasHydrated || !isAuthenticated || !cart || cart.items.length === 0) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
     }
 
     const handleNext = () => {
@@ -109,11 +119,12 @@ export default function CheckoutPage() {
                 paymentMethod: selectedPaymentMethod,
                 note: orderNote,
                 shippingFee: shippingFee,
+                voucherCode: selectedVoucher?.code || undefined,
                 items: selectedItems.map(item => ({
                     productId: item.productId,
                     variantId: item.variantId,
-                    productName: `Product #${item.productId}`, // Temporary - should come from product data
-                    sku: `SKU-${item.variantId}`, // Temporary
+                    productName: `Product #${item.productId}`,
+                    sku: `SKU-${item.variantId}`,
                     attributesName: item.attributesName || "",
                     quantity: item.quantity,
                     price: item.priceSnapshot,
@@ -202,10 +213,21 @@ export default function CheckoutPage() {
                             )}
 
                             {currentStep === 2 && (
-                                <PaymentStep
-                                    selectedMethod={selectedPaymentMethod}
-                                    onSelectMethod={setSelectedPaymentMethod}
-                                />
+                                <div className="space-y-4">
+                                    <PaymentStep
+                                        selectedMethod={selectedPaymentMethod}
+                                        onSelectMethod={setSelectedPaymentMethod}
+                                    />
+
+                                    {/* Voucher Selector */}
+                                    <VoucherSelector
+                                        subtotal={selectedItems.reduce((sum, item) => sum + item.priceSnapshot * item.quantity, 0)}
+                                        onVoucherSelect={(voucher, discount) => {
+                                            setSelectedVoucher(voucher);
+                                            setVoucherDiscount(discount);
+                                        }}
+                                    />
+                                </div>
                             )}
 
                             {currentStep === 3 && (
@@ -217,6 +239,8 @@ export default function CheckoutPage() {
                                     termsAccepted={termsAccepted}
                                     onTermsChange={setTermsAccepted}
                                     selectedItems={selectedItems}
+                                    selectedVoucher={selectedVoucher}
+                                    voucherDiscount={voucherDiscount}
                                 />
                             )}
                         </motion.div>
@@ -280,7 +304,11 @@ export default function CheckoutPage() {
                         transition={{ delay: 0.2 }}
                         className="lg:col-span-1"
                     >
-                        <OrderSummary selectedItems={selectedItems} />
+                        <OrderSummary
+                            selectedItems={selectedItems}
+                            selectedVoucher={selectedVoucher}
+                            voucherDiscount={voucherDiscount}
+                        />
                     </motion.div>
                 </div>
             </div>

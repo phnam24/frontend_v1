@@ -21,8 +21,11 @@ export interface Order {
 }
 
 export interface OrderItem {
+    productId: number;
     variantId: number;
     productName: string;
+    sku: string;
+    attributesName: string;
     size?: string;
     color?: string;
     price: number;

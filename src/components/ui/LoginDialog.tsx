@@ -11,12 +11,12 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart, CreditCard } from "lucide-react";
 
 interface LoginDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    action: "cart" | "wishlist";
+    action: "cart" | "wishlist" | "buy";
     redirectUrl?: string;
 }
 
@@ -29,8 +29,13 @@ export function LoginDialog({ isOpen, onClose, action, redirectUrl }: LoginDialo
         onClose();
     };
 
-    const actionText = action === "cart" ? "thêm vào giỏ hàng" : "thêm vào wishlist";
-    const Icon = action === "cart" ? ShoppingCart : Heart;
+    const actionConfig = {
+        cart: { text: "thêm vào giỏ hàng", icon: ShoppingCart },
+        wishlist: { text: "thêm vào yêu thích", icon: Heart },
+        buy: { text: "mua ngay", icon: CreditCard },
+    };
+
+    const { text: actionText, icon: Icon } = actionConfig[action];
 
     return (
         <AlertDialog open={isOpen} onOpenChange={onClose}>

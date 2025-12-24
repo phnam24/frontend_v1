@@ -2,7 +2,7 @@
 
 import { useAddressStore } from "@/lib/store/address.store";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, CreditCard, Package, FileText, AlertCircle, Phone, User, Home, CheckCircle2, TrendingUp } from "lucide-react";
+import { MapPin, CreditCard, Package, FileText, AlertCircle, Phone, User, Home, CheckCircle2, TrendingUp, Ticket } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +11,8 @@ import type { PaymentMethod } from "@/types/order";
 import type { CartItem } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { CheckoutItemCard } from "./CheckoutItemCard";
+import type { Voucher } from "@/types/voucher";
 
 interface ReviewStepProps {
     selectedAddressId: number | null;
@@ -20,6 +22,8 @@ interface ReviewStepProps {
     termsAccepted: boolean;
     onTermsChange: (accepted: boolean) => void;
     selectedItems: CartItem[];
+    selectedVoucher?: Voucher | null;
+    voucherDiscount?: number;
 }
 
 export function ReviewStep({
@@ -30,6 +34,8 @@ export function ReviewStep({
     termsAccepted,
     onTermsChange,
     selectedItems,
+    selectedVoucher,
+    voucherDiscount = 0,
 }: ReviewStepProps) {
     const { addresses } = useAddressStore();
 
@@ -62,7 +68,7 @@ export function ReviewStep({
 
     const shippingFee = 30000;
     const subtotal = selectedItems.reduce((sum, item) => sum + (item.priceSnapshot * item.quantity), 0);
-    const total = subtotal + shippingFee;
+    const total = subtotal + shippingFee - voucherDiscount;
 
     return (
         <div className="space-y-6">
@@ -131,24 +137,9 @@ export function ReviewStep({
                         </Badge>
                     </div>
 
-                    <div className="space-y-2 pl-6">
+                    <div className="pl-2">
                         {selectedItems.map((item) => (
-                            <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                                <div className="flex-1 min-w-0 pr-4">
-                                    <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                                        Sản phẩm #{item.productId}
-                                    </p>
-                                    {item.attributesName && (
-                                        <p className="text-xs text-gray-500 mt-0.5">{item.attributesName}</p>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-3 flex-shrink-0">
-                                    <span className="text-xs text-gray-500">x{item.quantity}</span>
-                                    <span className="text-sm font-semibold text-primary min-w-[80px] text-right">
-                                        {formatPrice(item.priceSnapshot * item.quantity)}
-                                    </span>
-                                </div>
-                            </div>
+                            <CheckoutItemCard key={item.id} item={item} />
                         ))}
                     </div>
                 </div>
@@ -163,6 +154,15 @@ export function ReviewStep({
                         <span className="text-gray-600">Phí vận chuyển</span>
                         <span className="font-semibold text-gray-900">{formatPrice(shippingFee)}</span>
                     </div>
+                    {selectedVoucher && voucherDiscount > 0 && (
+                        <div className="flex justify-between text-green-600">
+                            <span className="flex items-center gap-1">
+                                <Ticket className="h-4 w-4" />
+                                Mã giảm giá ({selectedVoucher.code})
+                            </span>
+                            <span className="font-semibold">-{formatPrice(voucherDiscount)}</span>
+                        </div>
+                    )}
                     <Separator />
                     <div className="flex justify-between items-center pt-2">
                         <span className="text-base font-bold text-gray-900">Tổng cộng</span>

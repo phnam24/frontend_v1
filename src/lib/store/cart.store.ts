@@ -21,6 +21,7 @@ interface CartState {
     toggleItemSelection: (itemId: number) => void;
     selectAllItems: () => void;
     clearSelection: () => void;
+    setSelectedItemIds: (ids: number[]) => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -145,6 +146,10 @@ export const useCartStore = create<CartState>()(
 
             clearSelection: () => {
                 set({ selectedItemIds: [] });
+            },
+
+            setSelectedItemIds: (ids: number[]) => {
+                set({ selectedItemIds: ids });
             },
         }),
         {

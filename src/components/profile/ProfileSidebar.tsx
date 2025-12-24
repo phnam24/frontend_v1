@@ -13,7 +13,6 @@ const menuItems = [
     { icon: User, label: "Thông tin tài khoản", href: "/profile" },
     { icon: MapPin, label: "Địa chỉ", href: "/profile/addresses" },
     { icon: Lock, label: "Đổi mật khẩu", href: "/profile/change-password" },
-    { icon: Heart, label: "Sản phẩm yêu thích", href: "/profile/wishlist" },
 ];
 
 export function ProfileSidebar() {

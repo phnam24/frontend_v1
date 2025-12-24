@@ -11,19 +11,21 @@ import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm";
 
 export default function ChangePasswordPage() {
     const router = useRouter();
-    const { user, isAuthenticated, loadUser } = useAuthStore();
+    const { user, isAuthenticated, loadUser, hasHydrated } = useAuthStore();
 
     useEffect(() => {
-        loadUser();
-    }, [loadUser]);
+        if (hasHydrated) {
+            loadUser();
+        }
+    }, [loadUser, hasHydrated]);
 
     useEffect(() => {
-        if (!isAuthenticated) {
+        if (hasHydrated && !isAuthenticated) {
             router.push("/login");
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, hasHydrated, router]);
 
-    if (!user) {
+    if (!hasHydrated || !user) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <p className="text-muted-foreground">Đang tải...</p>

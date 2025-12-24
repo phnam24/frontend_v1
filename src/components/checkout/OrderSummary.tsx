@@ -4,21 +4,29 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Truck, Package, ShoppingBag, Tag } from "lucide-react";
+import { Truck, Package, ShoppingBag, Tag, Ticket } from "lucide-react";
 import type { CartItem } from "@/types";
+import type { Voucher } from "@/types/voucher";
+import { CheckoutItemCard } from "./CheckoutItemCard";
 
 interface OrderSummaryProps {
     selectedItems: CartItem[];
+    selectedVoucher?: Voucher | null;
+    voucherDiscount?: number;
 }
 
-export function OrderSummary({ selectedItems }: OrderSummaryProps) {
+export function OrderSummary({
+    selectedItems,
+    selectedVoucher,
+    voucherDiscount = 0
+}: OrderSummaryProps) {
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat("vi-VN").format(price) + " đ";
     };
 
     const shippingFee = 30000;
     const subtotal = selectedItems.reduce((sum, item) => sum + (item.priceSnapshot * item.quantity), 0);
-    const total = subtotal + shippingFee;
+    const total = subtotal + shippingFee - voucherDiscount;
 
     return (
         <div className="bg-white rounded-xl border-2 border-gray-200 shadow-sm sticky top-24">
@@ -34,29 +42,9 @@ export function OrderSummary({ selectedItems }: OrderSummaryProps) {
             </div>
 
             {/* Cart Items */}
-            <div className="p-6 space-y-3 max-h-80 overflow-y-auto">
+            <div className="p-4 space-y-1 max-h-80 overflow-y-auto">
                 {selectedItems.map((item) => (
-                    <div key={item.id} className="flex gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="relative w-16 h-16 flex-shrink-0 bg-white rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
-                            <Package className="h-8 w-8 text-gray-400" />
-                            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-primary">
-                                {item.quantity}
-                            </Badge>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium line-clamp-2 text-gray-900">
-                                Sản phẩm #{item.productId}
-                            </p>
-                            {item.attributesName && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {item.attributesName}
-                                </p>
-                            )}
-                            <p className="text-sm font-semibold text-primary mt-1">
-                                {formatPrice(item.priceSnapshot * item.quantity)}
-                            </p>
-                        </div>
-                    </div>
+                    <CheckoutItemCard key={item.id} item={item} compact />
                 ))}
             </div>
 
@@ -76,6 +64,17 @@ export function OrderSummary({ selectedItems }: OrderSummaryProps) {
                     </div>
                     <span className="font-semibold text-gray-900">{formatPrice(shippingFee)}</span>
                 </div>
+
+                {/* Voucher Discount */}
+                {selectedVoucher && voucherDiscount > 0 && (
+                    <div className="flex justify-between text-sm items-center">
+                        <div className="flex items-center gap-1.5">
+                            <Ticket className="h-4 w-4 text-green-500" />
+                            <span className="text-green-600">Mã giảm giá</span>
+                        </div>
+                        <span className="font-semibold text-green-600">-{formatPrice(voucherDiscount)}</span>
+                    </div>
+                )}
 
                 <Separator />
 

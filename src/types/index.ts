@@ -34,6 +34,8 @@ export interface User {
     lastName: string;
     dob: string;
     roles: Role[];
+    totalSpent?: number;
+    rank?: string;
     createdAt: string;
     updatedAt: string;
 }

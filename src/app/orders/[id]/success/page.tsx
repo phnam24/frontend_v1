@@ -9,6 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { AddressDisplay } from "@/components/orders/AddressDisplay";
+import { OrderItemCard } from "@/components/orders/OrderItemCard";
 
 export default function OrderSuccessPage() {
     const params = useParams();
@@ -99,11 +101,13 @@ export default function OrderSuccessPage() {
 
                     {/* Shipping Address */}
                     <div className="mb-4 pb-4 border-b border-gray-200">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-3">
                             <MapPin className="h-4 w-4 text-primary" />
                             <span className="text-sm font-semibold text-gray-900">Địa chỉ giao hàng</span>
                         </div>
-                        <p className="text-sm text-gray-700 pl-6">Địa chỉ ID: {currentOrder.addressId}</p>
+                        <div className="pl-6">
+                            <AddressDisplay addressId={currentOrder.addressId} />
+                        </div>
                     </div>
 
                     {/* Payment Method */}
@@ -128,24 +132,9 @@ export default function OrderSuccessPage() {
                                 {currentOrder.items.length} sản phẩm
                             </Badge>
                         </div>
-                        <div className="space-y-2 pl-6">
+                        <div className="pl-2">
                             {currentOrder.items.map((item, index) => (
-                                <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                                            {item.productName}
-                                        </p>
-                                        {item.variantId && (
-                                            <p className="text-xs text-gray-500 mt-0.5">{item.variantId}</p>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-3 flex-shrink-0">
-                                        <span className="text-xs text-gray-500">x{item.quantity}</span>
-                                        <span className="text-sm font-semibold text-primary min-w-[80px] text-right">
-                                            {formatPrice(item.price * item.quantity)}
-                                        </span>
-                                    </div>
-                                </div>
+                                <OrderItemCard key={index} item={item} />
                             ))}
                         </div>
                     </div>

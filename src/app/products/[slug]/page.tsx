@@ -6,7 +6,7 @@ import { getProductById, getAllProducts } from "@/lib/api/product.service";
 import { getReviewsByProductId, calculateReviewStats } from "@/lib/api/review.service";
 import { extractIdFromSlug } from "@/lib/utils/slug";
 import { Header } from "@/components/layout/Header";
-import { ChevronRight, ShoppingCart, Heart, Share2, Check, Star, Package, Shield, Truck } from "lucide-react";
+import { ChevronRight, ShoppingCart, Heart, Share2, Check, Star, Package, Shield, Truck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,8 @@ export default function ProductDetailPage() {
     const { isAuthenticated } = useAuthStore();
     const router = useRouter();
     const [loginDialogOpen, setLoginDialogOpen] = useState(false);
-    const [loginAction, setLoginAction] = useState<"cart" | "wishlist">("cart");
+    const [loginAction, setLoginAction] = useState<"cart" | "wishlist" | "buy">("cart");
+    const [isBuying, setIsBuying] = useState(false);
 
     // Extract ID from slug (format: {slug}-{id})
     const productId = slugWithId ? extractIdFromSlug(slugWithId) : null;
@@ -181,6 +182,57 @@ export default function ProductDetailPage() {
             });
         } catch (error) {
             console.error("Add to cart error:", error);
+        }
+    };
+
+    const handleBuyNow = async () => {
+        if (!isAuthenticated) {
+            setLoginAction("buy");
+            setLoginDialogOpen(true);
+            return;
+        }
+
+        try {
+            setIsBuying(true);
+
+            // Get variant info
+            const variantId = product.variants?.[0]?.id || product.id;
+            const variantName = selectedColor && selectedSize
+                ? `${selectedColor} - ${selectedSize}`
+                : product.variants?.[0]
+                    ? [product.variants[0].color, product.variants[0].size].filter(Boolean).join(" - ")
+                    : "";
+
+            // Add to cart
+            const cartItem = await addItem({
+                productId: product.id,
+                variantId: variantId,
+                quantity: 1,
+                price: product.priceSale || product.priceList,
+                attributesName: variantName,
+            });
+
+            // Select only this item for checkout
+            const { setSelectedItemIds, fetchCart } = useCartStore.getState();
+            await fetchCart(); // Refresh cart to get the new item
+            const cart = useCartStore.getState().cart;
+
+            // Find the item we just added (by productId and variantId)
+            const addedItem = cart?.items.find(
+                item => item.productId === product.id && item.variantId === variantId
+            );
+
+            if (addedItem) {
+                setSelectedItemIds([addedItem.id]);
+            }
+
+            // Navigate to checkout
+            router.push("/checkout");
+        } catch (error) {
+            console.error("Buy now error:", error);
+            toast.error("Có lỗi xảy ra, vui lòng thử lại");
+        } finally {
+            setIsBuying(false);
         }
     };
 
@@ -344,9 +396,23 @@ export default function ProductDetailPage() {
 
                             {/* Buy Buttons */}
                             <div className="space-y-3">
-                                <Button size="lg" className="w-full bg-red-600 hover:bg-red-700 text-white text-lg h-12">
-                                    <ShoppingCart className="h-5 w-5 mr-2" />
-                                    MUA NGAY
+                                <Button
+                                    size="lg"
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white text-lg h-12"
+                                    onClick={handleBuyNow}
+                                    disabled={isBuying}
+                                >
+                                    {isBuying ? (
+                                        <>
+                                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                                            Đang xử lý...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ShoppingCart className="h-5 w-5 mr-2" />
+                                            MUA NGAY
+                                        </>
+                                    )}
                                 </Button>
                                 <Button
                                     size="lg"
