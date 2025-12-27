@@ -102,16 +102,16 @@ export default function ProductsPage() {
             </div>
 
             {/* Main Content */}
-            <div className="container mx-auto px-4 py-4">
+            <div className="container mx-auto px-2 lg:px-4 py-4">
                 {/* 2-Column Layout: Sidebar + Content */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                    {/* Left Sidebar - Filters */}
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+                    {/* Left Sidebar - Filters (1/5 = 20%) */}
                     <aside className="lg:col-span-1">
                         <FilterSidebar />
                     </aside>
 
-                    {/* Right Content - Brand, Categories, Products */}
-                    <main className="lg:col-span-3 space-y-4">
+                    {/* Right Content - Products (4/5 = 80%) */}
+                    <main className="lg:col-span-4 space-y-4">
                         {/* Brand Row */}
                         <BrandRow />
 

@@ -58,19 +58,64 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
     useEffect(() => {
         const fetchSpecs = async () => {
             try {
-                const variants = await getVariantsByProduct(product.id);
-                setVariants(variants); // Store variants for add to cart
-                if (variants.length > 0) {
-                    const variantSpecs = await getVariantSpecs(variants[0].id);
+                const variantsData = await getVariantsByProduct(product.id);
+                setVariants(variantsData);
+
+                if (variantsData.length > 0) {
+                    const variant = variantsData[0];
                     const specsMap: ProductSpecs = {};
-                    // variantSpecs.forEach((spec) => {
-                    //     const key = spec.specAttributeId.toLowerCase();
-                    //     if (key.includes('cpu') || key.includes('processor')) specsMap.cpu = spec.value;
-                    //     if (key.includes('gpu') || key.includes('card')) specsMap.gpu = spec.value;
-                    //     if (key.includes('ram') || key.includes('memory')) specsMap.ram = spec.value;
-                    //     if (key.includes('storage') || key.includes('ssd') || key.includes('hdd')) specsMap.storage = spec.value;
-                    //     if (key.includes('screen') || key.includes('display')) specsMap.screen = spec.value;
-                    // });
+
+                    // Extract from variant direct fields
+                    if (variant.cpuModel) {
+                        // Shorten CPU name for display
+                        let cpuShort = variant.cpuModel
+                            .replace('Intel® Core™', '')
+                            .replace('AMD Ryzen', 'Ryzen')
+                            .replace('Ultra', 'U')
+                            .trim();
+                        specsMap.cpu = cpuShort;
+                    }
+
+                    // GPU - from gpuModel or specs
+                    if (variant.gpuModel && variant.gpuModel !== 'Onboard graphics') {
+                        specsMap.gpu = variant.gpuModel;
+                    } else if (variant.igpu) {
+                        specsMap.gpu = variant.igpu;
+                    }
+
+                    // RAM and Storage from direct fields
+                    if (variant.ramGb) {
+                        specsMap.ram = `${variant.ramGb}GB`;
+                    }
+                    if (variant.storageGb) {
+                        specsMap.storage = `${variant.storageGb >= 1000 ? (variant.storageGb / 1000) + 'TB' : variant.storageGb + 'GB'}`;
+                    }
+
+                    // Screen info from specs array
+                    if (variant.specs && Array.isArray(variant.specs)) {
+                        const screenSize = variant.specs.find((s: any) => s.attributeKey === 'laptop_kichthuocmanhinh')?.value;
+                        const resolution = variant.specs.find((s: any) => s.attributeKey === 'laptop_chuandophangiaimanhinh')?.value;
+                        const panelType = variant.specs.find((s: any) => s.attributeKey === 'laptop_congnghetamnenmanhinh')?.value;
+                        const refreshRate = variant.specs.find((s: any) => s.attributeKey === 'laptop_tansoquetmanhinh')?.value;
+                        const igpu = variant.specs.find((s: any) => s.attributeKey === 'laptop_chipdohoatichhop')?.value;
+
+                        // Build screen string: e.g. "14" 2.8K/OLED/120Hz"
+                        const screenParts = [];
+                        if (screenSize) screenParts.push(screenSize);
+                        if (resolution) screenParts.push(resolution);
+                        if (panelType) screenParts.push(panelType);
+                        if (refreshRate) screenParts.push(refreshRate);
+
+                        if (screenParts.length > 0) {
+                            specsMap.screen = screenParts.join(' / ');
+                        }
+
+                        // Get integrated GPU from specs if not from variant
+                        if (!specsMap.gpu && igpu) {
+                            specsMap.gpu = igpu.replace('Intel® ', '').replace('™', '');
+                        }
+                    }
+
                     setSpecs(specsMap);
                 }
             } catch (error) {
@@ -264,7 +309,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                         </p>
 
                         {/* Product Name - Fixed height */}
-                        <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 h-10 group-hover:text-primary-600 transition-colors">
+                        <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 h-8 group-hover:text-primary-600 transition-colors">
                             {product.name}
                         </h3>
 
@@ -288,23 +333,42 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                             )}
                         </div>
 
-                        {/* Specs - Flexible height to fill space */}
-                        <div className="flex-grow space-y-1.5 text-xs text-gray-600 min-h-[60px]">
-                            {specs.cpu && (
-                                <div className="flex items-center gap-1.5">
-                                    <Cpu className="h-3.5 w-3.5 text-primary-500 flex-shrink-0" />
-                                    <span className="truncate">{specs.cpu}</span>
-                                </div>
-                            )}
-                            {specs.ram && specs.storage && (
-                                <div className="flex items-center gap-1.5">
-                                    <HardDrive className="h-3.5 w-3.5 text-primary-500 flex-shrink-0" />
-                                    <span className="truncate">{specs.ram} / {specs.storage}</span>
-                                </div>
-                            )}
+                        {/* Specs - Compact design matching reference */}
+                        <div className="flex-grow space-y-1.5 min-h-[70px]">
+                            {/* Row 1: CPU + GPU */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                {specs.cpu && (
+                                    <div className="inline-flex items-center gap-1 border border-gray-200 rounded px-1.5 py-0.5 text-[10px]">
+                                        <Cpu className="h-2.5 w-2.5 text-blue-500" />
+                                        <span className="text-gray-700 font-medium">{specs.cpu}</span>
+                                    </div>
+                                )}
+                                {specs.gpu && (
+                                    <div className="inline-flex items-center gap-1 border border-gray-200 rounded px-1.5 py-0.5 text-[10px]">
+                                        <span className="text-gray-700 font-medium">{specs.gpu}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Row 2: RAM + Storage */}
+                            <div className="flex items-center gap-1.5">
+                                {specs.ram && (
+                                    <div className="inline-flex items-center gap-1 border border-gray-200 rounded px-1.5 py-0.5 text-[10px]">
+                                        <HardDrive className="h-2.5 w-2.5 text-green-500" />
+                                        <span className="text-gray-700 font-medium">{specs.ram}</span>
+                                    </div>
+                                )}
+                                {specs.storage && (
+                                    <div className="inline-flex items-center gap-1 border border-gray-200 rounded px-1.5 py-0.5 text-[10px]">
+                                        <span className="text-gray-700 font-medium">{specs.storage}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Row 3: Screen */}
                             {specs.screen && (
-                                <div className="flex items-center gap-1.5">
-                                    <Monitor className="h-3.5 w-3.5 text-primary-500 flex-shrink-0" />
+                                <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                                    <Monitor className="h-2.5 w-2.5 flex-shrink-0" />
                                     <span className="truncate">{specs.screen}</span>
                                 </div>
                             )}

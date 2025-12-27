@@ -133,15 +133,24 @@ export default function CheckoutPage() {
 
             const order = await createOrder(orderData);
 
-            // Clear cart immediately after order is created
-            // This happens for both COD and VNPay
-            await removeSelectedItems();
+            console.log("Order created:", order);
+
+            // Clear cart in background (non-blocking for faster redirect)
+            removeSelectedItems().catch(console.error);
 
             if (selectedPaymentMethod === "COD") {
                 toast.success("Đặt hàng thành công!");
-                router.push(`/orders/${order.id}/success`);
+                // Redirect to order success page, fallback to orders list if no order id
+                if (order?.id) {
+                    router.push(`/orders/${order.id}/success`);
+                } else {
+                    router.push("/orders");
+                }
             } else {
                 // VNPay payment
+                if (!order?.id || !order?.total) {
+                    throw new Error("Không thể lấy thông tin đơn hàng");
+                }
                 const paymentRequest = {
                     orderId: order.id.toString(),
                     amount: order.total,

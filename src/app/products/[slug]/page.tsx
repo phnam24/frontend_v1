@@ -17,11 +17,12 @@ import { useAuthStore } from "@/lib/store/auth.store";
 import { cn } from "@/lib/utils";
 import { ImageGallery } from "@/components/products/ImageGallery";
 import { AnimatedPrice } from "@/components/ui/AnimatedPrice";
-import { VariantSelector } from "@/components/products/VariantSelector";
+import { ProductVariantSelector } from "@/components/products/ProductVariantSelector";
 import { CartToast } from "@/components/ui/CartToast";
 import { ExpandableDescription } from "@/components/ui/ExpandableDescription";
 import { RelatedProducts } from "@/components/products/RelatedProducts";
 import { LoginDialog } from "@/components/ui/LoginDialog";
+import type { ProductVariant } from "@/types";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { ReviewStats } from "@/components/reviews/ReviewStats";
@@ -32,8 +33,7 @@ export default function ProductDetailPage() {
     const params = useParams();
     const slugWithId = Array.isArray(params.slug) ? params.slug[0] : params.slug;
     const [activeTab, setActiveTab] = useState("description");
-    const [selectedColor, setSelectedColor] = useState<string>();
-    const [selectedSize, setSelectedSize] = useState<string>();
+    const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
     const { addItem } = useCartStore();
     const { isAuthenticated } = useAuthStore();
@@ -152,19 +152,19 @@ export default function ProductDetailPage() {
         }
 
         try {
-            // Get first variant or use product ID
-            const variantId = product.variants?.[0]?.id || product.id;
-            const variantName = selectedColor && selectedSize
-                ? `${selectedColor} - ${selectedSize}`
-                : product.variants?.[0]
-                    ? [product.variants[0].color, product.variants[0].size].filter(Boolean).join(" - ")
-                    : "";
+            // Get selected variant or first variant
+            const variant = selectedVariant || (product.variants as ProductVariant[])?.[0];
+            const variantId = variant?.id || product.id;
+            const variantName = variant
+                ? [variant.color, variant.ramGb ? `${variant.ramGb}GB RAM` : null, variant.storageGb ? `${variant.storageGb >= 1000 ? (variant.storageGb / 1000) + 'TB' : variant.storageGb + 'GB'} SSD` : null].filter(Boolean).join(" - ")
+                : "";
+            const variantPrice = variant?.priceSale || variant?.priceList || product.priceSale || product.priceList;
 
             await addItem({
                 productId: product.id,
                 variantId: variantId,
                 quantity: 1,
-                price: product.priceSale || product.priceList,
+                price: variantPrice,
                 attributesName: variantName,
             });
 
@@ -195,20 +195,19 @@ export default function ProductDetailPage() {
         try {
             setIsBuying(true);
 
-            // Get variant info
-            const variantId = product.variants?.[0]?.id || product.id;
-            const variantName = selectedColor && selectedSize
-                ? `${selectedColor} - ${selectedSize}`
-                : product.variants?.[0]
-                    ? [product.variants[0].color, product.variants[0].size].filter(Boolean).join(" - ")
-                    : "";
+            // Get variant info - use selectedVariant or first variant
+            const variant = selectedVariant || (product.variants as ProductVariant[])?.[0];
+            const variantId = variant?.id || product.id;
+            const variantName = variant
+                ? [variant.color, variant.ramGb ? `${variant.ramGb}GB` : null, variant.storageGb ? `${variant.storageGb}GB` : null].filter(Boolean).join(" - ")
+                : "";
 
             // Add to cart
-            const cartItem = await addItem({
+            await addItem({
                 productId: product.id,
                 variantId: variantId,
                 quantity: 1,
-                price: product.priceSale || product.priceList,
+                price: variant?.priceSale || product.priceSale || product.priceList,
                 attributesName: variantName,
             });
 
@@ -236,19 +235,14 @@ export default function ProductDetailPage() {
         }
     };
 
-    // Mock variant data (replace with real data from API)
-    const mockColors = [
-        { id: "gray", name: "Xám", hex: "#6B7280", available: true, stock: 15 },
-        { id: "silver", name: "Bạc", hex: "#C0C0C0", available: true, stock: 8 },
-        { id: "black", name: "Đen", hex: "#1F2937", available: false, stock: 0 },
-    ];
+    // Get variants from product (real data from API)
+    const variants = (product.variants as ProductVariant[]) || [];
 
-    const mockSizes = [
-        { id: "13", label: '13"', available: true, stock: 12 },
-        { id: "14", label: '14"', available: true, stock: 20 },
-        { id: "15", label: '15"', available: true, stock: 5 },
-        { id: "16", label: '16"', available: false, stock: 0 },
-    ];
+    // Get specs to show - fallback to first variant's specs if selected variant has no specs
+    // (This is because only the first variant typically has full specs data)
+    const specsToShow = (selectedVariant?.specs && selectedVariant.specs.length > 0)
+        ? selectedVariant.specs
+        : variants[0]?.specs || [];
 
     const tabs = [
         { id: "description", label: "Mô tả sản phẩm" },
@@ -350,23 +344,26 @@ export default function ProductDetailPage() {
                                 <span className="text-sm text-gray-600">Đã bán: 256</span>
                             </div>
 
-                            {/* Animated Price */}
+                            {/* Animated Price - Updates with selected variant */}
                             <AnimatedPrice
-                                currentPrice={product.priceSale}
-                                originalPrice={product.priceList}
-                                discount={discount}
-                                savings={savings}
+                                currentPrice={selectedVariant?.priceSale || product.priceSale}
+                                originalPrice={selectedVariant?.priceList || product.priceList}
+                                discount={(() => {
+                                    const list = selectedVariant?.priceList || product.priceList;
+                                    const sale = selectedVariant?.priceSale || product.priceSale;
+                                    return sale < list ? Math.round(((list - sale) / list) * 100) : 0;
+                                })()}
+                                savings={(selectedVariant?.priceList || product.priceList) - (selectedVariant?.priceSale || product.priceSale)}
                             />
 
                             {/* Variant Selector */}
-                            <VariantSelector
-                                colors={mockColors}
-                                sizes={mockSizes}
-                                selectedColor={selectedColor}
-                                selectedSize={selectedSize}
-                                onColorChange={setSelectedColor}
-                                onSizeChange={setSelectedSize}
-                            />
+                            {variants.length > 0 && (
+                                <ProductVariantSelector
+                                    variants={variants}
+                                    selectedVariantId={selectedVariant?.id}
+                                    onVariantChange={setSelectedVariant}
+                                />
+                            )}
 
                             {/* Promotions */}
                             <div className="border rounded-lg p-4 space-y-2">
@@ -471,42 +468,53 @@ export default function ProductDetailPage() {
                                         <span className="font-medium text-right">{product.brand.name}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between py-2 border-b">
-                                    <span className="text-gray-600">Part Number</span>
-                                    <span className="font-medium text-right">83K6005UVN</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b">
-                                    <span className="text-gray-600">CPU</span>
-                                    <span className="font-medium text-right">AMD Ryzen 5 7535HS</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b">
-                                    <span className="text-gray-600">RAM</span>
-                                    <span className="font-medium text-right">24GB DDR5</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b">
-                                    <span className="text-gray-600">Ổ cứng</span>
-                                    <span className="font-medium text-right">512GB SSD</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b">
-                                    <span className="text-gray-600">Card đồ họa</span>
-                                    <span className="font-medium text-right">AMD Radeon</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b">
-                                    <span className="text-gray-600">Màn hình</span>
-                                    <span className="font-medium text-right">14" FHD IPS</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b">
-                                    <span className="text-gray-600">Hệ điều hành</span>
-                                    <span className="font-medium text-right">Windows 11</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b">
-                                    <span className="text-gray-600">Trọng lượng</span>
-                                    <span className="font-medium text-right">~1.4kg</span>
-                                </div>
-                                <div className="flex justify-between py-2">
-                                    <span className="text-gray-600">Màu sắc</span>
-                                    <span className="font-medium text-right">Xám</span>
-                                </div>
+                                {/* Variant basic specs */}
+                                {selectedVariant?.cpuModel && (
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">CPU</span>
+                                        <span className="font-medium text-right">{selectedVariant.cpuModel}</span>
+                                    </div>
+                                )}
+                                {selectedVariant?.ramGb && (
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">RAM</span>
+                                        <span className="font-medium text-right">{selectedVariant.ramGb}GB</span>
+                                    </div>
+                                )}
+                                {selectedVariant?.storageGb && (
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">Ổ cứng</span>
+                                        <span className="font-medium text-right">
+                                            {selectedVariant.storageGb >= 1000
+                                                ? `${selectedVariant.storageGb / 1000}TB SSD`
+                                                : `${selectedVariant.storageGb}GB SSD`}
+                                        </span>
+                                    </div>
+                                )}
+                                {selectedVariant?.gpuModel && (
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">Card đồ họa</span>
+                                        <span className="font-medium text-right">{selectedVariant.gpuModel}</span>
+                                    </div>
+                                )}
+                                {selectedVariant?.os && (
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">Hệ điều hành</span>
+                                        <span className="font-medium text-right">{selectedVariant.os}</span>
+                                    </div>
+                                )}
+                                {selectedVariant?.weightG && (
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">Trọng lượng</span>
+                                        <span className="font-medium text-right">{(selectedVariant.weightG / 1000).toFixed(2)}kg</span>
+                                    </div>
+                                )}
+                                {selectedVariant?.color && (
+                                    <div className="flex justify-between py-2">
+                                        <span className="text-gray-600">Màu sắc</span>
+                                        <span className="font-medium text-right">{selectedVariant.color}</span>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     </div>
@@ -571,50 +579,88 @@ export default function ProductDetailPage() {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
-                                    className="grid md:grid-cols-2 gap-4"
                                 >
-                                    <div className="space-y-2">
-                                        <h3 className="font-bold text-lg mb-3">Cấu hình</h3>
-                                        <div className="space-y-2 text-sm">
-                                            <div className="flex justify-between py-2 border-b">
-                                                <span className="text-gray-600">CPU</span>
-                                                <span className="font-medium">AMD Ryzen 5 7535HS</span>
-                                            </div>
-                                            <div className="flex justify-between py-2 border-b">
-                                                <span className="text-gray-600">RAM</span>
-                                                <span className="font-medium">24GB DDR5</span>
-                                            </div>
-                                            <div className="flex justify-between py-2 border-b">
-                                                <span className="text-gray-600">Ổ cứng</span>
-                                                <span className="font-medium">512GB SSD NVMe</span>
-                                            </div>
-                                            <div className="flex justify-between py-2 border-b">
-                                                <span className="text-gray-600">VGA</span>
-                                                <span className="font-medium">AMD Radeon Graphics</span>
-                                            </div>
+                                    {specsToShow.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {/* Group specs by category */}
+                                            {(() => {
+                                                const specs = specsToShow;
+
+                                                // Define category groupings
+                                                const categories = [
+                                                    {
+                                                        title: "Bộ xử lý (CPU)",
+                                                        keys: ["laptop_seriescpu", "laptop_thehecpu", "laptop_tocdoxulycpu", "laptop_sonhanluongxulycpu", "laptop_bonhocachecpu", "Laptop_thehecpufilter"]
+                                                    },
+                                                    {
+                                                        title: "Đồ họa (GPU)",
+                                                        keys: ["laptop_chipdohoatichhop", "laptop_segmentation"]
+                                                    },
+                                                    {
+                                                        title: "Bộ nhớ RAM",
+                                                        keys: ["laptop_dungluongbonho", "laptop_thehebonho", "laptop_busram", "laptop_sokhecamram", "laptop_dungluongbonhotoida", "ram_range"]
+                                                    },
+                                                    {
+                                                        title: "Ổ cứng",
+                                                        keys: ["ssd_range", "laptop_sokhecamm2"]
+                                                    },
+                                                    {
+                                                        title: "Màn hình",
+                                                        keys: ["laptop_kichthuocmanhinh", "laptop_dophangiaimanhinh", "laptop_chuandophangiaimanhinh", "laptop_congnghetamnenmanhinh", "laptop_tansoquetmanhinh", "laptop_bematmanhinh", "do_sang_man_hinh_laptop", "do_phu_mau", "laptop_manhinhcamung"]
+                                                    },
+                                                    {
+                                                        title: "Kết nối",
+                                                        keys: ["laptop_socongusbc", "laptop_socongusb31", "laptop_soconghdmi", "laptop_socongketnoiamthanh", "laptop_ketnoilan", "laptop_ketnoiwlan", "laptop_ketnoibluetooth"]
+                                                    },
+                                                    {
+                                                        title: "Bàn phím & Bảo mật",
+                                                        keys: ["laptop_banphimco", "laptop_banphimso", "laptop_dennenbanphim", "laptop_baomat", "bao_mat_khac"]
+                                                    },
+                                                    {
+                                                        title: "Pin & Nguồn",
+                                                        keys: ["laptop_congsuatpin", "laptop_dungluongpin", "laptop_kieupin"]
+                                                    },
+                                                    {
+                                                        title: "Thiết kế & Kích thước",
+                                                        keys: ["laptop_kichthuoc", "laptop_khoiluong", "chat_lieu_laptop"]
+                                                    },
+                                                    {
+                                                        title: "Thông tin khác",
+                                                        keys: ["laptop_series", "laptop_ten", "laptop_partnumber", "nhucausudung", "laptop_hedieuhanhrutgon", "laptop_webcam", "cong_nghe_am_thanh_laptop", "laptop_phukiendikem", "npu_tops"]
+                                                    }
+                                                ];
+
+                                                return (
+                                                    <div className="grid md:grid-cols-2 gap-6">
+                                                        {categories.map((category) => {
+                                                            const categorySpecs = specs.filter(s => category.keys.includes(s.attributeKey));
+                                                            if (categorySpecs.length === 0) return null;
+
+                                                            return (
+                                                                <div key={category.title} className="space-y-2">
+                                                                    <h3 className="font-bold text-base text-gray-900 pb-2 border-b-2 border-primary/20">
+                                                                        {category.title}
+                                                                    </h3>
+                                                                    <div className="space-y-1">
+                                                                        {categorySpecs.map((spec) => (
+                                                                            <div key={spec.id} className="flex justify-between py-2 border-b border-gray-100 hover:bg-gray-50 px-2 -mx-2 rounded">
+                                                                                <span className="text-sm text-gray-600">{spec.attributeLabel}</span>
+                                                                                <span className="text-sm font-medium text-gray-900 text-right max-w-[60%]">{spec.value}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="font-bold text-lg mb-3">Màn hình & Âm thanh</h3>
-                                        <div className="space-y-2 text-sm">
-                                            <div className="flex justify-between py-2 border-b">
-                                                <span className="text-gray-600">Màn hình</span>
-                                                <span className="font-medium">14" FHD IPS</span>
-                                            </div>
-                                            <div className="flex justify-between py-2 border-b">
-                                                <span className="text-gray-600">Độ phân giải</span>
-                                                <span className="font-medium">1920 x 1080</span>
-                                            </div>
-                                            <div className="flex justify-between py-2 border-b">
-                                                <span className="text-gray-600">Tần số quét</span>
-                                                <span className="font-medium">60Hz</span>
-                                            </div>
-                                            <div className="flex justify-between py-2 border-b">
-                                                <span className="text-gray-600">Âm thanh</span>
-                                                <span className="font-medium">Stereo speakers</span>
-                                            </div>
+                                    ) : (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <p>Chưa có thông số chi tiết cho phiên bản này</p>
                                         </div>
-                                    </div>
+                                    )}
                                 </motion.div>
                             )}
 

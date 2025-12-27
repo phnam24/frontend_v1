@@ -95,13 +95,35 @@ export interface ProductVariant {
     id: number;
     productId: number;
     sku: string;
-    price: number;
+    color?: string;
+    ramGb?: number;
+    storageGb?: number;
+    cpuModel?: string;
+    igpu?: string;
+    gpuModel?: string;
+    chipsetModel?: string;
+    os?: string;
+    priceList: number;
+    priceSale: number;
     stock: number;
-    color: string;
-    size: string;
-    image: string;
+    weightG?: number;
     createdAt: string;
     updatedAt: string;
+    allowPreorder?: boolean;
+    specs?: VariantSpec[];
+    // Legacy fields for backwards compatibility
+    price?: number;
+    size?: string;
+    image?: string;
+}
+
+export interface VariantSpec {
+    id: string;
+    productVariantId: number;
+    specAttributeId: number;
+    attributeKey: string;
+    attributeLabel: string;
+    value: string;
 }
 
 export interface Category {
@@ -247,8 +269,9 @@ export interface SpecAttribute {
 
 export interface VariantSpec {
     id: string;
-    variantId: number;
+    productVariantId: number;
     specAttributeId: number;
+    attributeKey: string;
+    attributeLabel: string;
     value: string;
-    createdAt: string;
 }
