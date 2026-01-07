@@ -174,6 +174,7 @@ export interface AddToCartRequest {
     quantity: number;
     price: number;
     attributesName?: string;
+    silent?: boolean; // If true, don't show toast (for Buy Now flow)
 }
 
 export interface UpdateCartItemRequest {

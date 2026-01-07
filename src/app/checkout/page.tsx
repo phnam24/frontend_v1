@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckoutStepper } from "@/components/checkout/CheckoutStepper";
 import { CheckoutLayout } from "@/components/checkout/CheckoutLayout";
@@ -28,6 +28,8 @@ const steps = [
 
 export default function CheckoutPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const isPreorder = searchParams.get("preorder") === "true";
     const { isAuthenticated, hasHydrated } = useAuthStore();
     const { cart, removeSelectedItems, selectedItemIds } = useCartStore();
     const { createOrder } = useOrderStore();
@@ -120,6 +122,7 @@ export default function CheckoutPage() {
                 note: orderNote,
                 shippingFee: shippingFee,
                 voucherCode: selectedVoucher?.code || undefined,
+                preorder: isPreorder || undefined, // Pass preorder flag if true
                 items: selectedItems.map(item => ({
                     productId: item.productId,
                     variantId: item.variantId,
@@ -194,6 +197,27 @@ export default function CheckoutPage() {
                     </motion.div>
                 </div>
             </div>
+
+            {/* Preorder Notice Banner */}
+            {isPreorder && (
+                <div className="bg-violet-50 border-b border-violet-200">
+                    <div className="container mx-auto px-4 py-3">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-violet-100 rounded-full flex-shrink-0">
+                                <ShoppingBag className="h-5 w-5 text-violet-600" />
+                            </div>
+                            <div>
+                                <p className="font-medium text-violet-900">
+                                    Đây là đơn đặt trước
+                                </p>
+                                <p className="text-sm text-violet-700">
+                                    Sản phẩm sẽ được giao khi có hàng. Thời gian dự kiến: 7-14 ngày làm việc.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Stepper */}
             <div className="bg-white border-b border-gray-200">

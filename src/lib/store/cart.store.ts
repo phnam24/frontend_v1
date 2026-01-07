@@ -50,7 +50,10 @@ export const useCartStore = create<CartState>()(
                     set({ isLoading: true });
                     const cart = await cartService.addToCart(data);
                     set({ cart, isLoading: false });
-                    toast.success("Đã thêm vào giỏ hàng");
+                    // Only show toast if not in silent mode (Buy Now doesn't need toast)
+                    if (!data.silent) {
+                        toast.success("Đã thêm vào giỏ hàng");
+                    }
                 } catch (error: any) {
                     set({ isLoading: false });
                     const message = error.response?.data?.message || "Không thể thêm vào giỏ hàng";

@@ -102,7 +102,7 @@ export function CartItem({ item, isSelected = false, onToggleSelect }: CartItemP
                                 href={`/products/${productSlug}`}
                                 className="block group"
                             >
-                                <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 mb-1">
+                                <h3 className="font-semibold text-sm text-gray-900 group-hover:text-primary transition-colors line-clamp-2 mb-1">
                                     {productName}
                                 </h3>
                             </Link>

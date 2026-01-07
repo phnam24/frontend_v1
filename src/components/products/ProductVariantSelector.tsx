@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Check, Package, AlertCircle, Cpu, HardDrive, Palette } from "lucide-react";
+import { Check, Package, Clock, Cpu, HardDrive, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ProductVariant } from "@/types";
 
@@ -51,7 +51,7 @@ export function ProductVariantSelector({
                     <span>
                         {variant.stock > 0
                             ? `Còn ${variant.stock} sản phẩm`
-                            : "Hết hàng"}
+                            : "Hỗ trợ đặt trước"}
                     </span>
                 </div>
             </div>
@@ -69,24 +69,27 @@ export function ProductVariantSelector({
                     return (
                         <motion.button
                             key={variant.id}
-                            onClick={() => !isOutOfStock && onVariantChange(variant)}
-                            disabled={isOutOfStock}
+                            onClick={() => onVariantChange(variant)}
                             className={cn(
                                 "relative w-full p-4 rounded-xl border-2 text-left transition-all",
                                 isSelected
-                                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm",
-                                isOutOfStock && "opacity-50 cursor-not-allowed bg-gray-50"
+                                    ? isOutOfStock
+                                        ? "border-violet-500 bg-violet-50 ring-2 ring-violet-200"
+                                        : "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
                             )}
-                            whileHover={!isOutOfStock ? { scale: 1.01 } : {}}
-                            whileTap={!isOutOfStock ? { scale: 0.99 } : {}}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
                         >
                             {/* Selected Check Mark */}
                             {isSelected && (
                                 <motion.div
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
-                                    className="absolute top-3 right-3 bg-primary rounded-full p-1"
+                                    className={cn(
+                                        "absolute top-3 right-3 rounded-full p-1",
+                                        isOutOfStock ? "bg-violet-500" : "bg-primary"
+                                    )}
                                 >
                                     <Check className="h-3 w-3 text-white" />
                                 </motion.div>
@@ -98,7 +101,10 @@ export function ProductVariantSelector({
                                 <div className="flex flex-wrap items-center gap-2">
                                     {/* Color Badge */}
                                     {variant.color && (
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-700">
+                                        <div className={cn(
+                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                                            isOutOfStock ? "bg-gray-100 text-gray-500" : "bg-gray-100 text-gray-700"
+                                        )}>
                                             <Palette className="h-3 w-3" />
                                             {variant.color}
                                         </div>
@@ -106,7 +112,10 @@ export function ProductVariantSelector({
 
                                     {/* RAM Badge */}
                                     {variant.ramGb && (
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-xs font-medium text-blue-700">
+                                        <div className={cn(
+                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                                            isOutOfStock ? "bg-gray-100 text-gray-500" : "bg-blue-50 text-blue-700"
+                                        )}>
                                             <Cpu className="h-3 w-3" />
                                             {variant.ramGb}GB RAM
                                         </div>
@@ -114,7 +123,10 @@ export function ProductVariantSelector({
 
                                     {/* Storage Badge */}
                                     {variant.storageGb && (
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 text-xs font-medium text-orange-700">
+                                        <div className={cn(
+                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                                            isOutOfStock ? "bg-gray-100 text-gray-500" : "bg-orange-50 text-orange-700"
+                                        )}>
                                             <HardDrive className="h-3 w-3" />
                                             {formatStorage(variant.storageGb)} SSD
                                         </div>
@@ -127,7 +139,9 @@ export function ProductVariantSelector({
                                     <div className="flex items-baseline gap-2">
                                         <span className={cn(
                                             "text-base font-bold",
-                                            isSelected ? "text-primary" : "text-gray-900"
+                                            isSelected
+                                                ? isOutOfStock ? "text-violet-600" : "text-primary"
+                                                : "text-gray-900"
                                         )}>
                                             {formatPrice(variant.priceSale)}
                                         </span>
@@ -145,7 +159,7 @@ export function ProductVariantSelector({
                                             ? "text-green-600"
                                             : variant.stock > 0
                                                 ? "text-yellow-600"
-                                                : "text-red-600"
+                                                : "text-violet-600"
                                     )}>
                                         {variant.stock > 0 ? (
                                             <>
@@ -158,20 +172,13 @@ export function ProductVariantSelector({
                                             </>
                                         ) : (
                                             <>
-                                                <AlertCircle className="h-3 w-3" />
-                                                <span>Hết hàng</span>
+                                                <Clock className="h-3 w-3" />
+                                                <span>Đặt trước</span>
                                             </>
                                         )}
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Out of Stock Overlay */}
-                            {isOutOfStock && (
-                                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/60">
-                                    <span className="text-sm font-medium text-red-600">Hết hàng</span>
-                                </div>
-                            )}
                         </motion.button>
                     );
                 })}

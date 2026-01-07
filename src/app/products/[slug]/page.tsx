@@ -202,13 +202,14 @@ export default function ProductDetailPage() {
                 ? [variant.color, variant.ramGb ? `${variant.ramGb}GB` : null, variant.storageGb ? `${variant.storageGb}GB` : null].filter(Boolean).join(" - ")
                 : "";
 
-            // Add to cart
+            // Add to cart silently (no toast for Buy Now flow)
             await addItem({
                 productId: product.id,
                 variantId: variantId,
                 quantity: 1,
                 price: variant?.priceSale || product.priceSale || product.priceList,
                 attributesName: variantName,
+                silent: true, // Don't show "Added to cart" toast
             });
 
             // Select only this item for checkout
@@ -225,8 +226,9 @@ export default function ProductDetailPage() {
                 setSelectedItemIds([addedItem.id]);
             }
 
-            // Navigate to checkout
-            router.push("/checkout");
+            // Navigate to checkout (with preorder flag if applicable)
+            const checkoutUrl = isPreorder ? "/checkout?preorder=true" : "/checkout";
+            router.push(checkoutUrl);
         } catch (error) {
             console.error("Buy now error:", error);
             toast.error("Có lỗi xảy ra, vui lòng thử lại");
@@ -243,6 +245,13 @@ export default function ProductDetailPage() {
     const specsToShow = (selectedVariant?.specs && selectedVariant.specs.length > 0)
         ? selectedVariant.specs
         : variants[0]?.specs || [];
+
+    // Preorder detection:
+    // - If product has allowPreorder flag
+    // - OR if selected variant is out of stock (stock === 0)
+    const isOutOfStock = selectedVariant?.stock === 0;
+    const allowPreorder = (product as any).allowPreorder === true;
+    const isPreorder = isOutOfStock || allowPreorder;
 
     const tabs = [
         { id: "description", label: "Mô tả sản phẩm" },
@@ -393,9 +402,31 @@ export default function ProductDetailPage() {
 
                             {/* Buy Buttons */}
                             <div className="space-y-3">
+                                {/* Preorder Badge */}
+                                {isPreorder && (
+                                    <div className="flex items-center gap-2 p-3 bg-violet-50 border border-violet-200 rounded-lg">
+                                        <div className="p-1.5 bg-violet-100 rounded-full">
+                                            <Package className="h-4 w-4 text-violet-600" />
+                                        </div>
+                                        <div className="text-sm">
+                                            <span className="font-medium text-violet-700">
+                                                {isOutOfStock ? "Sản phẩm tạm hết hàng" : "Hỗ trợ đặt trước"}
+                                            </span>
+                                            <span className="text-violet-600 ml-1">
+                                                - Đặt trước để nhận hàng sớm nhất khi có
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <Button
                                     size="lg"
-                                    className="w-full bg-red-600 hover:bg-red-700 text-white text-lg h-12"
+                                    className={cn(
+                                        "w-full text-white text-lg h-12",
+                                        isPreorder
+                                            ? "bg-violet-600 hover:bg-violet-700"
+                                            : "bg-red-600 hover:bg-red-700"
+                                    )}
                                     onClick={handleBuyNow}
                                     disabled={isBuying}
                                 >
@@ -403,6 +434,11 @@ export default function ProductDetailPage() {
                                         <>
                                             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                                             Đang xử lý...
+                                        </>
+                                    ) : isPreorder ? (
+                                        <>
+                                            <Package className="h-5 w-5 mr-2" />
+                                            ĐẶT TRƯỚC NGAY
                                         </>
                                     ) : (
                                         <>
@@ -414,10 +450,15 @@ export default function ProductDetailPage() {
                                 <Button
                                     size="lg"
                                     variant="outline"
-                                    className="w-full border-primary text-primary hover:bg-primary/10 h-12"
+                                    className={cn(
+                                        "w-full h-12",
+                                        isPreorder
+                                            ? "border-violet-500 text-violet-600 hover:bg-violet-50"
+                                            : "border-primary text-primary hover:bg-primary/10"
+                                    )}
                                     onClick={handleAddToCart}
                                 >
-                                    THÊM VÀO GIỎ HÀNG
+                                    {isPreorder ? "THÊM VÀO ĐẶT TRƯỚC" : "THÊM VÀO GIỎ HÀNG"}
                                 </Button>
                             </div>
 

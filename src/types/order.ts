@@ -1,9 +1,12 @@
 // Order Types
+export type OrderType = "NORMAL" | "PREORDER";
+
 export interface Order {
     id: number;
     userId: string;
     addressId: number;
     voucherId?: number;
+    orderType?: OrderType;
     status: OrderStatus;
     paymentMethod: PaymentMethod;
     paymentStatus: PaymentStatus;
@@ -75,12 +78,19 @@ export const PaymentMethodLabels: Record<PaymentMethod, string> = {
     MOMO: "MoMo"
 };
 
+// Vietnamese Labels for Order Type
+export const OrderTypeLabels: Record<OrderType, string> = {
+    NORMAL: "Đơn hàng thường",
+    PREORDER: "Đặt trước"
+};
+
 export interface CreateOrderRequest {
     addressId: number;
     voucherCode?: string;
     paymentMethod: PaymentMethod;
     shippingFee: number;
     note?: string;
+    preorder?: boolean; // Set to true for preorder items
     items: {
         productId: number;
         variantId: number;
