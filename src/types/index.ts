@@ -267,12 +267,3 @@ export interface SpecAttribute {
     createdAt: string;
     updatedAt: string;
 }
-
-export interface VariantSpec {
-    id: string;
-    productVariantId: number;
-    specAttributeId: number;
-    attributeKey: string;
-    attributeLabel: string;
-    value: string;
-}
